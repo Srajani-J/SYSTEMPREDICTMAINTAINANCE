@@ -1,0 +1,904 @@
+/* =========================================================
+   SYSTEMSMARTPREDICT
+   Global Styles
+========================================================= */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  background: #020817;
+  color: #ffffff;
+  overflow-x: hidden;
+}
+
+button {
+  font-family: inherit;
+}
+
+.home {
+  min-height: 100vh;
+  background:
+    radial-gradient(
+      circle at 80% 20%,
+      rgba(0, 140, 220, 0.22),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 20% 80%,
+      rgba(0, 80, 160, 0.12),
+      transparent 30%
+    ),
+    #020817;
+}
+
+
+/* =========================================================
+   NAVBAR
+========================================================= */
+
+.navbar {
+  height: 80px;
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 7%;
+
+  position: relative;
+  z-index: 20;
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+  background: rgba(2, 8, 23, 0.88);
+
+  backdrop-filter: blur(14px);
+}
+
+.logo {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  white-space: nowrap;
+}
+
+.logo span {
+  color: #00bfff;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 38px;
+}
+
+.nav-links a {
+  position: relative;
+
+  color: #a9bdd1;
+  text-decoration: none;
+
+  font-size: 15px;
+
+  transition: 0.3s ease;
+}
+
+.nav-links a::after {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  bottom: -8px;
+
+  width: 0;
+  height: 2px;
+
+  background: #00bfff;
+
+  transition: 0.3s ease;
+}
+
+.nav-links a:hover {
+  color: #00bfff;
+}
+
+.nav-links a:hover::after {
+  width: 100%;
+}
+
+.login-btn {
+  padding: 10px 27px;
+
+  border: 1px solid #00bfff;
+  border-radius: 8px;
+
+  background: transparent;
+
+  color: #ffffff;
+
+  cursor: pointer;
+
+  transition: 0.3s ease;
+}
+
+.login-btn:hover {
+  background: #00bfff;
+
+  color: #020817;
+
+  box-shadow: 0 0 25px rgba(0, 191, 255, 0.45);
+}
+
+
+/* =========================================================
+   HERO
+========================================================= */
+
+.hero {
+  min-height: 690px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 60px 7%;
+
+  position: relative;
+
+  overflow: hidden;
+}
+
+.hero::before {
+  content: "";
+
+  position: absolute;
+
+  width: 600px;
+  height: 600px;
+
+  right: -180px;
+  top: 20px;
+
+  background: radial-gradient(
+    circle,
+    rgba(0, 191, 255, 0.22),
+    transparent 65%
+  );
+
+  filter: blur(10px);
+
+  pointer-events: none;
+}
+
+.hero-content {
+  width: 48%;
+
+  position: relative;
+
+  z-index: 3;
+}
+
+.small-title {
+  color: #00bfff;
+
+  font-size: 13px;
+
+  font-weight: 600;
+
+  letter-spacing: 5px;
+
+  margin-bottom: 22px;
+}
+
+.hero h1 {
+  font-size: clamp(55px, 6vw, 78px);
+
+  line-height: 0.94;
+
+  font-weight: 800;
+
+  letter-spacing: -2px;
+
+  margin-bottom: 32px;
+}
+
+.hero h1 span {
+  color: #00bfff;
+
+  text-shadow:
+    0 0 15px rgba(0, 191, 255, 0.35),
+    0 0 35px rgba(0, 191, 255, 0.18);
+}
+
+.description {
+  max-width: 550px;
+
+  color: #9fb5cc;
+
+  font-size: 18px;
+
+  line-height: 1.7;
+
+  margin-bottom: 36px;
+}
+
+.buttons {
+  display: flex;
+
+  gap: 18px;
+}
+
+.primary-btn,
+.secondary-btn {
+  padding: 15px 28px;
+
+  border-radius: 8px;
+
+  font-size: 15px;
+
+  cursor: pointer;
+
+  transition: 0.3s ease;
+}
+
+.primary-btn {
+  border: 1px solid #00bfff;
+
+  background: #00afea;
+
+  color: white;
+}
+
+.primary-btn:hover {
+  transform: translateY(-4px);
+
+  box-shadow:
+    0 0 20px rgba(0, 191, 255, 0.45),
+    0 0 45px rgba(0, 191, 255, 0.18);
+}
+
+.secondary-btn {
+  border: 1px solid #31506d;
+
+  background: rgba(2, 8, 23, 0.5);
+
+  color: white;
+}
+
+.secondary-btn:hover {
+  border-color: #00bfff;
+
+  color: #00bfff;
+
+  transform: translateY(-3px);
+}
+
+
+/* =========================================================
+   3D MACHINE
+========================================================= */
+
+.three-d-container {
+  width: 50%;
+
+  height: 540px;
+
+  position: relative;
+
+  z-index: 2;
+}
+
+.three-d-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+
+  display: block;
+}
+
+
+/* =========================================================
+   PLATFORM SECTION
+========================================================= */
+
+.platform-section {
+  position: relative;
+
+  padding: 120px 7%;
+
+  text-align: center;
+
+  background:
+    radial-gradient(
+      circle at 50% 10%,
+      rgba(0, 92, 160, 0.28),
+      transparent 40%
+    ),
+    linear-gradient(
+      180deg,
+      #031426 0%,
+      #020817 100%
+    );
+
+  border-top: 1px solid rgba(0, 191, 255, 0.08);
+}
+
+.section-label {
+  color: #00bfff;
+
+  font-size: 12px;
+
+  font-weight: 600;
+
+  letter-spacing: 5px;
+
+  margin-bottom: 18px;
+}
+
+.platform-section h2 {
+  font-size: clamp(35px, 4vw, 52px);
+
+  line-height: 1.1;
+
+  margin-bottom: 22px;
+}
+
+.platform-section h2 span {
+  color: #00bfff;
+}
+
+.platform-description {
+  max-width: 760px;
+
+  margin: 0 auto 65px;
+
+  color: #91a9c0;
+
+  font-size: 17px;
+
+  line-height: 1.7;
+}
+
+
+/* =========================================================
+   PLATFORM FLOW
+========================================================= */
+
+.platform-flow {
+  max-width: 1250px;
+
+  margin: 0 auto;
+
+  display: grid;
+
+  grid-template-columns: repeat(4, 1fr);
+
+  gap: 20px;
+
+  position: relative;
+}
+
+.platform-flow::before {
+  content: "";
+
+  position: absolute;
+
+  top: 55px;
+  left: 10%;
+  right: 10%;
+
+  height: 1px;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 191, 255, 0.5),
+    transparent
+  );
+
+  z-index: 0;
+}
+
+
+/* =========================================================
+   PLATFORM CARD
+========================================================= */
+
+.platform-card {
+  position: relative;
+
+  z-index: 1;
+
+  min-height: 330px;
+
+  padding: 30px 24px;
+
+  text-align: left;
+
+  border-radius: 18px;
+
+  border: 1px solid rgba(0, 191, 255, 0.16);
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(7, 31, 55, 0.95),
+      rgba(2, 13, 28, 0.92)
+    );
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 20px 50px rgba(0, 0, 0, 0.25);
+
+  backdrop-filter: blur(12px);
+
+  overflow: hidden;
+
+  transition:
+    transform 0.4s ease,
+    border-color 0.4s ease,
+    box-shadow 0.4s ease;
+}
+
+.platform-card::before {
+  content: "";
+
+  position: absolute;
+
+  width: 120px;
+  height: 120px;
+
+  right: -50px;
+  top: -50px;
+
+  border-radius: 50%;
+
+  background: rgba(0, 191, 255, 0.08);
+
+  filter: blur(5px);
+}
+
+.platform-card:hover {
+  transform: translateY(-12px);
+
+  border-color: rgba(0, 191, 255, 0.7);
+
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.4),
+    0 0 30px rgba(0, 191, 255, 0.12);
+}
+
+.platform-icon {
+  width: 52px;
+  height: 52px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-bottom: 22px;
+
+  border-radius: 14px;
+
+  background: rgba(0, 191, 255, 0.1);
+
+  border: 1px solid rgba(0, 191, 255, 0.35);
+
+  color: #00bfff;
+
+  font-size: 25px;
+
+  box-shadow:
+    0 0 20px rgba(0, 191, 255, 0.08);
+}
+
+.platform-step {
+  color: #00bfff;
+
+  font-size: 12px;
+
+  font-weight: bold;
+
+  letter-spacing: 2px;
+
+  margin-bottom: 10px;
+}
+
+.platform-card h3 {
+  font-size: 21px;
+
+  margin-bottom: 15px;
+}
+
+.platform-card p {
+  color: #91a9c0;
+
+  font-size: 14px;
+
+  line-height: 1.7;
+
+  margin-bottom: 25px;
+}
+
+.card-line {
+  width: 100%;
+  height: 1px;
+
+  background: rgba(255, 255, 255, 0.08);
+
+  margin-bottom: 15px;
+}
+
+.card-status {
+  color: #00bfff;
+
+  font-size: 10px;
+
+  font-weight: bold;
+
+  letter-spacing: 1px;
+}
+
+
+/* =========================================================
+   PLATFORM MONITOR
+========================================================= */
+
+.platform-monitor {
+  max-width: 1250px;
+
+  margin: 55px auto 0;
+
+  padding: 30px 35px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 30px;
+
+  text-align: left;
+
+  border-radius: 20px;
+
+  border: 1px solid rgba(0, 191, 255, 0.18);
+
+  background:
+    linear-gradient(
+      120deg,
+      rgba(5, 31, 54, 0.9),
+      rgba(2, 15, 31, 0.85)
+    );
+
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.3);
+}
+
+.monitor-label {
+  color: #00bfff;
+
+  font-size: 10px;
+
+  letter-spacing: 3px;
+
+  margin-bottom: 8px;
+}
+
+.platform-monitor h3 {
+  font-size: 22px;
+
+  margin-bottom: 7px;
+}
+
+.platform-monitor p {
+  color: #819bb2;
+
+  font-size: 13px;
+}
+
+.monitor-stats {
+  display: flex;
+
+  gap: 30px;
+}
+
+.monitor-stat {
+  min-width: 90px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 5px;
+}
+
+.monitor-stat strong {
+  color: #ffffff;
+
+  font-size: 22px;
+}
+
+.monitor-stat span {
+  color: #7892aa;
+
+  font-size: 10px;
+
+  text-transform: uppercase;
+
+  letter-spacing: 1px;
+}
+
+.monitor-stat.healthy strong {
+  color: #00bfff;
+}
+
+
+/* =========================================================
+   TECHNOLOGY SECTION
+========================================================= */
+
+.technology-section {
+  min-height: 450px;
+
+  padding: 120px 7%;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+
+  text-align: center;
+
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(0, 77, 130, 0.22),
+      transparent 55%
+    ),
+    #020817;
+
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.technology-section h2 {
+  font-size: clamp(35px, 4vw, 50px);
+
+  margin-bottom: 20px;
+}
+
+.technology-section > p {
+  max-width: 700px;
+
+  color: #91a9c0;
+
+  line-height: 1.8;
+
+  font-size: 17px;
+}
+
+
+/* =========================================================
+   TEAM SECTION
+========================================================= */
+
+.team-section {
+  min-height: 400px;
+
+  padding: 110px 7%;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+
+  text-align: center;
+
+  background:
+    linear-gradient(
+      180deg,
+      #020817,
+      #03172b
+    );
+
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.team-section h2 {
+  font-size: clamp(35px, 4vw, 50px);
+
+  margin-bottom: 20px;
+}
+
+.team-section p {
+  max-width: 650px;
+
+  color: #91a9c0;
+
+  font-size: 17px;
+
+  line-height: 1.8;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1000px) {
+
+  .navbar {
+    padding: 0 5%;
+  }
+
+  .hero {
+    padding: 50px 5%;
+
+    gap: 20px;
+  }
+
+  .hero h1 {
+    font-size: 58px;
+  }
+
+  .platform-flow {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .platform-flow::before {
+    display: none;
+  }
+
+  .platform-monitor {
+    flex-direction: column;
+
+    align-items: flex-start;
+  }
+
+}
+
+
+@media (max-width: 800px) {
+
+  .nav-links {
+    display: none;
+  }
+
+  .hero {
+    flex-direction: column;
+
+    min-height: auto;
+
+    padding-top: 80px;
+
+    text-align: center;
+  }
+
+  .hero-content {
+    width: 100%;
+  }
+
+  .description {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .buttons {
+    justify-content: center;
+  }
+
+  .three-d-container {
+    width: 100%;
+
+    height: 450px;
+  }
+
+  .monitor-stats {
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns: repeat(2, 1fr);
+
+    gap: 25px;
+  }
+
+}
+
+
+@media (max-width: 600px) {
+
+  .navbar {
+    height: 70px;
+
+    padding: 0 20px;
+  }
+
+  .logo {
+    font-size: 16px;
+
+    letter-spacing: 1px;
+  }
+
+  .login-btn {
+    padding: 8px 18px;
+  }
+
+  .hero {
+    padding: 60px 20px 30px;
+  }
+
+  .small-title {
+    font-size: 10px;
+
+    letter-spacing: 3px;
+  }
+
+  .hero h1 {
+    font-size: 48px;
+
+    letter-spacing: -1px;
+  }
+
+  .description {
+    font-size: 15px;
+  }
+
+  .buttons {
+    flex-direction: column;
+
+    align-items: center;
+  }
+
+  .primary-btn,
+  .secondary-btn {
+    width: 200px;
+  }
+
+  .three-d-container {
+    height: 380px;
+  }
+
+  .platform-section {
+    padding: 80px 20px;
+  }
+
+  .platform-description {
+    font-size: 15px;
+  }
+
+  .platform-flow {
+    grid-template-columns: 1fr;
+  }
+
+  .platform-card {
+    min-height: auto;
+  }
+
+  .platform-monitor {
+    padding: 25px 20px;
+  }
+
+  .technology-section,
+  .team-section {
+    padding: 80px 20px;
+  }
+
+}
