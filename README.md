@@ -1,16 +1,84 @@
-# React + Vite
+# Predictive Maintenance Research & Dataset
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+## Project Part
 
-Currently, two official plugins are available:
+**Predictive Maintenance Research & Initial Dataset Development**
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Deliverables
 
-## React Compiler
+This package contains:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```text
+Predictive-Maintenance/
+|
++-- README.md
++-- research/
+|   +-- sensor_parameters.md
+|   +-- sample_machine_data.csv
+|
++-- scripts/
+    +-- generate_dataset.py
+```
 
-## Expanding the Oxlint configuration
+## What this part of the project does
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+This part identifies important machine parameters for failure prediction and creates an initial synthetic CSV dataset.
+
+### Selected parameters
+
+- Temperature
+- Vibration
+- Pressure
+- Rotational Speed
+- Torque
+- Tool Wear
+- Failure
+
+## Dataset
+
+The included dataset contains 1,000 synthetic records.
+
+Target:
+
+```text
+failure
+0 = No failure
+1 = Failure
+```
+
+## How to regenerate the dataset
+
+Requirements:
+
+- Python 3.x
+
+Open a terminal in the project root and run:
+
+```bash
+python scripts/generate_dataset.py
+```
+
+The script creates:
+
+```text
+research/sample_machine_data.csv
+```
+
+## Important
+
+The CSV is synthetic. The ranges are illustrative for development and should not be treated as machine-specific safety/failure thresholds.
+
+For a real predictive-maintenance system, use validated sensor data and historical maintenance/failure records.
+
+## Suggested next project stages
+
+1. Load the CSV
+2. Check missing values and duplicates
+3. Perform exploratory data analysis
+4. Visualize sensor distributions
+5. Analyze feature relationships
+6. Split data into training and testing sets
+7. Train classification models
+8. Compare evaluation metrics
+9. Build a failure-risk prediction interface
+10. Connect the model to real-time or historical sensor data
