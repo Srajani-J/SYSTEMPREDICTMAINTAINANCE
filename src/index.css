@@ -1,7 +1,7 @@
-/* =========================================================
+/* =========================================
    SYSTEMSMARTPREDICT
-   Global Styles
-========================================================= */
+   MEMBER 1 - FRONTEND + 3D UI
+========================================= */
 
 * {
   margin: 0;
@@ -14,62 +14,69 @@ html {
 }
 
 body {
+  margin: 0;
   font-family: Arial, Helvetica, sans-serif;
   background: #020817;
-  color: #ffffff;
-  overflow-x: hidden;
+  color: white;
 }
 
 button {
   font-family: inherit;
 }
 
-.home {
-  min-height: 100vh;
-  background:
-    radial-gradient(
-      circle at 80% 20%,
-      rgba(0, 140, 220, 0.22),
-      transparent 30%
-    ),
-    radial-gradient(
-      circle at 20% 80%,
-      rgba(0, 80, 160, 0.12),
-      transparent 30%
-    ),
-    #020817;
+a {
+  text-decoration: none;
+  color: inherit;
 }
 
+/* =========================================
+   HOME
+========================================= */
 
-/* =========================================================
+.home {
+  min-height: 100vh;
+
+  background:
+    radial-gradient(
+      circle at 75% 30%,
+      #064e7a 0%,
+      #03152b 30%,
+      #020817 65%
+    );
+
+  color: white;
+}
+
+/* =========================================
    NAVBAR
-========================================================= */
+========================================= */
 
 .navbar {
   height: 80px;
-  width: 100%;
+
+  padding: 0 7%;
 
   display: flex;
   align-items: center;
   justify-content: space-between;
 
-  padding: 0 7%;
-
-  position: relative;
-  z-index: 20;
+  background: rgba(2, 8, 23, 0.85);
 
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 
-  background: rgba(2, 8, 23, 0.88);
+  position: relative;
 
-  backdrop-filter: blur(14px);
+  z-index: 100;
 }
 
 .logo {
-  font-size: 20px;
+  font-size: 24px;
+
   font-weight: 800;
-  letter-spacing: 2px;
-  white-space: nowrap;
+
+  letter-spacing: 1px;
+
+  color: white;
 }
 
 .logo span {
@@ -78,33 +85,16 @@ button {
 
 .nav-links {
   display: flex;
+
   align-items: center;
+
   gap: 38px;
 }
 
 .nav-links a {
-  position: relative;
-
-  color: #a9bdd1;
-  text-decoration: none;
+  color: #aebfd1;
 
   font-size: 15px;
-
-  transition: 0.3s ease;
-}
-
-.nav-links a::after {
-  content: "";
-
-  position: absolute;
-
-  left: 0;
-  bottom: -8px;
-
-  width: 0;
-  height: 2px;
-
-  background: #00bfff;
 
   transition: 0.3s ease;
 }
@@ -113,19 +103,16 @@ button {
   color: #00bfff;
 }
 
-.nav-links a:hover::after {
-  width: 100%;
-}
-
 .login-btn {
-  padding: 10px 27px;
+  padding: 11px 28px;
 
-  border: 1px solid #00bfff;
-  border-radius: 8px;
+  color: white;
 
   background: transparent;
 
-  color: #ffffff;
+  border: 1px solid #00bfff;
+
+  border-radius: 8px;
 
   cursor: pointer;
 
@@ -137,111 +124,119 @@ button {
 
   color: #020817;
 
-  box-shadow: 0 0 25px rgba(0, 191, 255, 0.45);
+  box-shadow:
+    0 0 20px rgba(0, 191, 255, 0.4);
 }
 
-
-/* =========================================================
+/* =========================================
    HERO
-========================================================= */
+========================================= */
 
 .hero {
-  min-height: 690px;
+  min-height: 685px;
 
-  display: flex;
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
   align-items: center;
-  justify-content: space-between;
 
-  padding: 60px 7%;
+  padding: 70px 7%;
 
   position: relative;
 
   overflow: hidden;
 }
 
-.hero::before {
-  content: "";
-
-  position: absolute;
-
-  width: 600px;
-  height: 600px;
-
-  right: -180px;
-  top: 20px;
-
-  background: radial-gradient(
-    circle,
-    rgba(0, 191, 255, 0.22),
-    transparent 65%
-  );
-
-  filter: blur(10px);
-
-  pointer-events: none;
-}
-
 .hero-content {
-  width: 48%;
-
   position: relative;
 
-  z-index: 3;
+  z-index: 2;
 }
 
-.small-title {
+.hero-label {
   color: #00bfff;
 
   font-size: 13px;
 
-  font-weight: 600;
+  font-weight: 700;
 
   letter-spacing: 5px;
 
-  margin-bottom: 22px;
+  margin-bottom: 28px;
 }
 
 .hero h1 {
-  font-size: clamp(55px, 6vw, 78px);
+  font-size: clamp(55px, 6vw, 82px);
 
-  line-height: 0.94;
+  line-height: 0.92;
+
+  margin-bottom: 35px;
 
   font-weight: 800;
-
-  letter-spacing: -2px;
-
-  margin-bottom: 32px;
 }
 
 .hero h1 span {
   color: #00bfff;
 
   text-shadow:
-    0 0 15px rgba(0, 191, 255, 0.35),
-    0 0 35px rgba(0, 191, 255, 0.18);
+    0 0 10px rgba(0, 191, 255, 0.5),
+    0 0 30px rgba(0, 191, 255, 0.25);
 }
 
-.description {
-  max-width: 550px;
+.hero-description {
+  max-width: 580px;
 
-  color: #9fb5cc;
+  color: #9db7ca;
 
   font-size: 18px;
 
   line-height: 1.7;
 
-  margin-bottom: 36px;
+  margin-bottom: 38px;
 }
 
-.buttons {
+.hero-buttons {
   display: flex;
 
   gap: 18px;
 }
 
-.primary-btn,
+.primary-btn {
+  padding: 15px 30px;
+
+  background: #00bfff;
+
+  color: white;
+
+  border: none;
+
+  border-radius: 8px;
+
+  font-size: 15px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: 0.3s ease;
+}
+
+.primary-btn:hover {
+  transform: translateY(-3px);
+
+  box-shadow:
+    0 0 30px rgba(0, 191, 255, 0.45);
+}
+
 .secondary-btn {
-  padding: 15px 28px;
+  padding: 15px 30px;
+
+  background: transparent;
+
+  color: white;
+
+  border: 1px solid rgba(0, 191, 255, 0.45);
 
   border-radius: 8px;
 
@@ -252,653 +247,772 @@ button {
   transition: 0.3s ease;
 }
 
-.primary-btn {
-  border: 1px solid #00bfff;
+.secondary-btn:hover {
+  background: rgba(0, 191, 255, 0.1);
 
-  background: #00afea;
-
-  color: white;
+  border-color: #00bfff;
 }
 
-.primary-btn:hover {
-  transform: translateY(-4px);
+/* =========================================
+   3D SCENE
+========================================= */
+
+.hero-3d {
+  width: 100%;
+
+  height: 600px;
+
+  position: relative;
+}
+
+.three-scene {
+  width: 100%;
+
+  height: 100%;
+}
+
+/* =========================================
+   SENSOR HUD
+========================================= */
+
+.sensor-label-card {
+  min-width: 150px;
+
+  padding: 12px 16px;
+
+  background: rgba(2, 8, 23, 0.78);
+
+  border: 1px solid rgba(0, 191, 255, 0.55);
+
+  border-radius: 10px;
+
+  backdrop-filter: blur(10px);
 
   box-shadow:
-    0 0 20px rgba(0, 191, 255, 0.45),
-    0 0 45px rgba(0, 191, 255, 0.18);
-}
-
-.secondary-btn {
-  border: 1px solid #31506d;
-
-  background: rgba(2, 8, 23, 0.5);
+    0 0 20px rgba(0, 191, 255, 0.2),
+    inset 0 0 15px rgba(0, 191, 255, 0.04);
 
   color: white;
-}
-
-.secondary-btn:hover {
-  border-color: #00bfff;
-
-  color: #00bfff;
-
-  transform: translateY(-3px);
-}
-
-
-/* =========================================================
-   3D MACHINE
-========================================================= */
-
-.three-d-container {
-  width: 50%;
-
-  height: 540px;
-
-  position: relative;
-
-  z-index: 2;
-}
-
-.three-d-container canvas {
-  width: 100% !important;
-  height: 100% !important;
-
-  display: block;
-}
-
-
-/* =========================================================
-   PLATFORM SECTION
-========================================================= */
-
-.platform-section {
-  position: relative;
-
-  padding: 120px 7%;
-
-  text-align: center;
-
-  background:
-    radial-gradient(
-      circle at 50% 10%,
-      rgba(0, 92, 160, 0.28),
-      transparent 40%
-    ),
-    linear-gradient(
-      180deg,
-      #031426 0%,
-      #020817 100%
-    );
-
-  border-top: 1px solid rgba(0, 191, 255, 0.08);
-}
-
-.section-label {
-  color: #00bfff;
 
   font-size: 12px;
-
-  font-weight: 600;
-
-  letter-spacing: 5px;
-
-  margin-bottom: 18px;
 }
 
-.platform-section h2 {
-  font-size: clamp(35px, 4vw, 52px);
-
-  line-height: 1.1;
-
-  margin-bottom: 22px;
-}
-
-.platform-section h2 span {
+.sensor-label-card strong {
   color: #00bfff;
 }
 
-.platform-description {
-  max-width: 760px;
+.sensor-value {
+  font-size: 20px;
 
-  margin: 0 auto 65px;
+  font-weight: 700;
 
-  color: #91a9c0;
+  margin-top: 4px;
+}
 
-  font-size: 17px;
+.sensor-status {
+  color: #36e0a0;
+
+  font-size: 11px;
+
+  margin-top: 3px;
+}
+
+/* =========================================
+   GENERAL SECTIONS
+========================================= */
+
+section {
+  scroll-margin-top: 80px;
+}
+
+.platform-section,
+.technology-section,
+.team-section {
+  padding: 100px 7%;
+
+  background: #020817;
+}
+
+.section-title {
+  text-align: center;
+
+  color: white;
+
+  font-size: 42px;
+
+  margin-bottom: 15px;
+}
+
+.section-subtitle {
+  text-align: center;
+
+  color: #8faec7;
+
+  max-width: 650px;
+
+  margin: 0 auto 55px;
 
   line-height: 1.7;
 }
 
+/* =========================================
+   PLATFORM
+========================================= */
 
-/* =========================================================
-   PLATFORM FLOW
-========================================================= */
-
-.platform-flow {
-  max-width: 1250px;
-
-  margin: 0 auto;
-
+.platform-grid {
   display: grid;
 
   grid-template-columns: repeat(4, 1fr);
 
-  gap: 20px;
-
-  position: relative;
+  gap: 22px;
 }
-
-.platform-flow::before {
-  content: "";
-
-  position: absolute;
-
-  top: 55px;
-  left: 10%;
-  right: 10%;
-
-  height: 1px;
-
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(0, 191, 255, 0.5),
-    transparent
-  );
-
-  z-index: 0;
-}
-
-
-/* =========================================================
-   PLATFORM CARD
-========================================================= */
 
 .platform-card {
-  position: relative;
+  padding: 30px;
 
-  z-index: 1;
+  min-height: 190px;
 
-  min-height: 330px;
+  background: rgba(4, 25, 48, 0.75);
 
-  padding: 30px 24px;
-
-  text-align: left;
+  border: 1px solid rgba(0, 191, 255, 0.25);
 
   border-radius: 18px;
 
-  border: 1px solid rgba(0, 191, 255, 0.16);
-
-  background:
-    linear-gradient(
-      145deg,
-      rgba(7, 31, 55, 0.95),
-      rgba(2, 13, 28, 0.92)
-    );
+  transition: 0.3s ease;
 
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 20px 50px rgba(0, 0, 0, 0.25);
-
-  backdrop-filter: blur(12px);
-
-  overflow: hidden;
-
-  transition:
-    transform 0.4s ease,
-    border-color 0.4s ease,
-    box-shadow 0.4s ease;
-}
-
-.platform-card::before {
-  content: "";
-
-  position: absolute;
-
-  width: 120px;
-  height: 120px;
-
-  right: -50px;
-  top: -50px;
-
-  border-radius: 50%;
-
-  background: rgba(0, 191, 255, 0.08);
-
-  filter: blur(5px);
+    0 0 25px rgba(0, 191, 255, 0.05);
 }
 
 .platform-card:hover {
-  transform: translateY(-12px);
+  transform: translateY(-8px);
 
-  border-color: rgba(0, 191, 255, 0.7);
-
-  box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.4),
-    0 0 30px rgba(0, 191, 255, 0.12);
-}
-
-.platform-icon {
-  width: 52px;
-  height: 52px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  margin-bottom: 22px;
-
-  border-radius: 14px;
-
-  background: rgba(0, 191, 255, 0.1);
-
-  border: 1px solid rgba(0, 191, 255, 0.35);
-
-  color: #00bfff;
-
-  font-size: 25px;
+  border-color: #00bfff;
 
   box-shadow:
-    0 0 20px rgba(0, 191, 255, 0.08);
-}
-
-.platform-step {
-  color: #00bfff;
-
-  font-size: 12px;
-
-  font-weight: bold;
-
-  letter-spacing: 2px;
-
-  margin-bottom: 10px;
+    0 0 30px rgba(0, 191, 255, 0.2);
 }
 
 .platform-card h3 {
-  font-size: 21px;
+  color: #00bfff;
 
   margin-bottom: 15px;
 }
 
 .platform-card p {
-  color: #91a9c0;
+  color: #9db7ca;
 
-  font-size: 14px;
-
-  line-height: 1.7;
-
-  margin-bottom: 25px;
+  line-height: 1.6;
 }
 
-.card-line {
-  width: 100%;
-  height: 1px;
+/* =========================================
+   MONITORING
+========================================= */
 
-  background: rgba(255, 255, 255, 0.08);
+.monitor-section {
+  padding: 100px 7%;
+
+  background:
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(0, 191, 255, 0.08),
+      transparent 55%
+    );
+}
+
+.monitor-panel {
+  max-width: 1100px;
+
+  margin: auto;
+
+  padding: 35px;
+
+  background: rgba(4, 25, 48, 0.75);
+
+  border: 1px solid rgba(0, 191, 255, 0.3);
+
+  border-radius: 22px;
+
+  box-shadow:
+    0 0 40px rgba(0, 191, 255, 0.08);
+}
+
+.monitor-grid {
+  display: grid;
+
+  grid-template-columns: repeat(4, 1fr);
+
+  gap: 20px;
+}
+
+.monitor-card {
+  padding: 25px;
+
+  background: rgba(0, 191, 255, 0.04);
+
+  border: 1px solid rgba(0, 191, 255, 0.2);
+
+  border-radius: 14px;
+
+  text-align: center;
+}
+
+.monitor-card h4 {
+  color: #8faec7;
 
   margin-bottom: 15px;
 }
 
-.card-status {
+.monitor-value {
   color: #00bfff;
 
-  font-size: 10px;
+  font-size: 30px;
 
-  font-weight: bold;
-
-  letter-spacing: 1px;
+  font-weight: 700;
 }
 
+.monitor-status {
+  color: #36e0a0;
 
-/* =========================================================
-   PLATFORM MONITOR
-========================================================= */
+  font-size: 13px;
 
-.platform-monitor {
-  max-width: 1250px;
-
-  margin: 55px auto 0;
-
-  padding: 30px 35px;
-
-  display: flex;
-
-  align-items: center;
-
-  justify-content: space-between;
-
-  gap: 30px;
-
-  text-align: left;
-
-  border-radius: 20px;
-
-  border: 1px solid rgba(0, 191, 255, 0.18);
-
-  background:
-    linear-gradient(
-      120deg,
-      rgba(5, 31, 54, 0.9),
-      rgba(2, 15, 31, 0.85)
-    );
-
-  box-shadow:
-    0 20px 50px rgba(0, 0, 0, 0.3);
+  margin-top: 8px;
 }
 
-.monitor-label {
+/* =========================================
+   TECHNOLOGY
+========================================= */
+
+.tech-grid {
+  max-width: 1000px;
+
+  margin: auto;
+
+  display: grid;
+
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 20px;
+}
+
+.tech-card {
+  padding: 25px;
+
+  text-align: center;
+
+  background: rgba(4, 25, 48, 0.7);
+
+  border: 1px solid rgba(0, 191, 255, 0.25);
+
+  border-radius: 15px;
+}
+
+.tech-card h3 {
   color: #00bfff;
+}
 
-  font-size: 10px;
+.tech-card p {
+  color: #9db7ca;
 
-  letter-spacing: 3px;
+  margin-top: 10px;
+}
+
+/* =========================================
+   TEAM
+========================================= */
+
+.team-grid {
+  display: grid;
+
+  grid-template-columns: repeat(4, 1fr);
+
+  gap: 22px;
+
+  max-width: 1100px;
+
+  margin: auto;
+}
+
+.team-card {
+  padding: 28px;
+
+  text-align: center;
+
+  background: rgba(4, 25, 48, 0.7);
+
+  border: 1px solid rgba(0, 191, 255, 0.25);
+
+  border-radius: 18px;
+
+  transition: 0.3s ease;
+}
+
+.team-card:hover {
+  transform: translateY(-6px);
+
+  border-color: #00bfff;
+}
+
+.team-card h3 {
+  color: white;
 
   margin-bottom: 8px;
 }
 
-.platform-monitor h3 {
-  font-size: 22px;
-
-  margin-bottom: 7px;
-}
-
-.platform-monitor p {
-  color: #819bb2;
-
-  font-size: 13px;
-}
-
-.monitor-stats {
-  display: flex;
-
-  gap: 30px;
-}
-
-.monitor-stat {
-  min-width: 90px;
-
-  display: flex;
-
-  flex-direction: column;
-
-  gap: 5px;
-}
-
-.monitor-stat strong {
-  color: #ffffff;
-
-  font-size: 22px;
-}
-
-.monitor-stat span {
-  color: #7892aa;
-
-  font-size: 10px;
-
-  text-transform: uppercase;
-
-  letter-spacing: 1px;
-}
-
-.monitor-stat.healthy strong {
+.team-card p {
   color: #00bfff;
 }
 
+/* =========================================
+   DASHBOARD
+========================================= */
 
-/* =========================================================
-   TECHNOLOGY SECTION
-========================================================= */
-
-.technology-section {
-  min-height: 450px;
-
-  padding: 120px 7%;
-
-  display: flex;
-
-  flex-direction: column;
-
-  align-items: center;
-
-  justify-content: center;
-
-  text-align: center;
-
-  background:
-    radial-gradient(
-      circle at center,
-      rgba(0, 77, 130, 0.22),
-      transparent 55%
-    ),
-    #020817;
-
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.technology-section h2 {
-  font-size: clamp(35px, 4vw, 50px);
-
-  margin-bottom: 20px;
-}
-
-.technology-section > p {
-  max-width: 700px;
-
-  color: #91a9c0;
-
-  line-height: 1.8;
-
-  font-size: 17px;
-}
-
-
-/* =========================================================
-   TEAM SECTION
-========================================================= */
-
-.team-section {
-  min-height: 400px;
+.dashboard-page {
+  min-height: 100vh;
 
   padding: 110px 7%;
 
-  display: flex;
-
-  flex-direction: column;
-
-  align-items: center;
-
-  justify-content: center;
-
-  text-align: center;
-
   background:
-    linear-gradient(
-      180deg,
-      #020817,
-      #03172b
-    );
+    radial-gradient(
+      circle at 80% 20%,
+      rgba(0, 191, 255, 0.12),
+      transparent 35%
+    ),
+    #020817;
 
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  color: white;
 }
 
-.team-section h2 {
-  font-size: clamp(35px, 4vw, 50px);
+.dashboard-page h1 {
+  font-size: 42px;
+
+  margin-bottom: 8px;
+
+  color: white;
+}
+
+.dashboard-subtitle {
+  color: #8faec7;
+
+  font-size: 18px;
+
+  margin-bottom: 45px;
+}
+
+/* =========================================
+   DASHBOARD CARDS
+========================================= */
+
+.dashboard-cards {
+  display: grid;
+
+  grid-template-columns: repeat(4, 1fr);
+
+  gap: 22px;
+
+  margin-bottom: 40px;
+}
+
+.dashboard-card {
+  padding: 28px;
+
+  min-height: 175px;
+
+  background: rgba(4, 25, 48, 0.75);
+
+  border: 1px solid rgba(0, 191, 255, 0.35);
+
+  border-radius: 18px;
+
+  box-shadow:
+    0 0 25px rgba(0, 191, 255, 0.08),
+    inset 0 0 20px rgba(0, 191, 255, 0.03);
+
+  transition: 0.3s ease;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-8px);
+
+  border-color: #00bfff;
+
+  box-shadow:
+    0 0 30px rgba(0, 191, 255, 0.25);
+}
+
+.dashboard-card h3 {
+  color: #9db7ca;
+
+  font-size: 16px;
 
   margin-bottom: 20px;
 }
 
-.team-section p {
-  max-width: 650px;
+.dashboard-value {
+  font-size: 34px;
 
-  color: #91a9c0;
+  font-weight: 700;
 
-  font-size: 17px;
+  color: #00bfff;
 
-  line-height: 1.8;
+  margin-bottom: 12px;
 }
 
+.status {
+  font-size: 14px;
 
-/* =========================================================
-   RESPONSIVE
-========================================================= */
+  font-weight: 600;
+}
 
-@media (max-width: 1000px) {
+.healthy {
+  color: #36e0a0;
+}
+
+.normal {
+  color: #00bfff;
+}
+
+/* =========================================
+   DASHBOARD 3D MACHINE
+========================================= */
+
+.dashboard-machine-section {
+  margin-top: 35px;
+
+  margin-bottom: 40px;
+
+  min-height: 560px;
+
+  display: grid;
+
+  grid-template-columns: 0.8fr 1.2fr;
+
+  overflow: hidden;
+
+  border-radius: 22px;
+
+  background:
+    radial-gradient(
+      circle at 75% 50%,
+      rgba(0, 191, 255, 0.12),
+      transparent 45%
+    ),
+    rgba(4, 25, 48, 0.72);
+
+  border: 1px solid rgba(0, 191, 255, 0.3);
+
+  box-shadow:
+    0 0 40px rgba(0, 191, 255, 0.08);
+}
+
+.dashboard-machine-info {
+  padding: 55px 35px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: center;
+}
+
+.dashboard-machine-info h2 {
+  color: white;
+
+  font-size: 30px;
+
+  margin-bottom: 18px;
+}
+
+.dashboard-machine-info > p {
+  color: #8faec7;
+
+  line-height: 1.7;
+
+  max-width: 400px;
+}
+
+.machine-status-box {
+  display: flex;
+
+  align-items: center;
+
+  gap: 15px;
+
+  margin-top: 35px;
+
+  padding: 18px;
+
+  max-width: 320px;
+
+  background: rgba(0, 191, 255, 0.06);
+
+  border: 1px solid rgba(0, 191, 255, 0.25);
+
+  border-radius: 12px;
+}
+
+.machine-status-box strong {
+  color: white;
+}
+
+.machine-status-box p {
+  color: #8faec7;
+
+  font-size: 13px;
+
+  margin-top: 5px;
+}
+
+.status-dot {
+  width: 13px;
+
+  height: 13px;
+
+  flex-shrink: 0;
+
+  background: #36e0a0;
+
+  border-radius: 50%;
+
+  box-shadow:
+    0 0 10px #36e0a0,
+    0 0 20px rgba(54, 224, 160, 0.5);
+
+  animation: statusPulse 1.5s infinite;
+}
+
+@keyframes statusPulse {
+
+  0% {
+    opacity: 1;
+
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.5;
+
+    transform: scale(1.25);
+  }
+
+  100% {
+    opacity: 1;
+
+    transform: scale(1);
+  }
+
+}
+
+.dashboard-machine-view {
+  min-height: 560px;
+
+  position: relative;
+
+  overflow: hidden;
+}
+
+.dashboard-machine-view canvas {
+  width: 100% !important;
+
+  height: 100% !important;
+
+  display: block;
+}
+
+/* =========================================
+   MACHINE OVERVIEW
+========================================= */
+
+.machine-summary {
+  padding: 30px;
+
+  border-radius: 20px;
+
+  background: rgba(4, 25, 48, 0.7);
+
+  border: 1px solid rgba(0, 191, 255, 0.3);
+
+  box-shadow:
+    0 0 30px rgba(0, 191, 255, 0.08);
+}
+
+.machine-summary h2 {
+  color: #00bfff;
+
+  margin-bottom: 25px;
+}
+
+.machine-info {
+  display: grid;
+
+  grid-template-columns: repeat(2, 1fr);
+
+  gap: 18px;
+}
+
+.machine-info p {
+  padding: 18px;
+
+  margin: 0;
+
+  background: rgba(0, 191, 255, 0.05);
+
+  border-radius: 10px;
+
+  color: #c5d7e5;
+}
+
+.machine-info strong {
+  color: white;
+}
+
+/* =========================================
+   FOOTER
+========================================= */
+
+.footer {
+  padding: 45px 7%;
+
+  text-align: center;
+
+  background: #010611;
+
+  border-top: 1px solid rgba(0, 191, 255, 0.15);
+}
+
+.footer-logo {
+  color: white;
+
+  font-size: 22px;
+
+  font-weight: 800;
+}
+
+.footer-logo span {
+  color: #00bfff;
+}
+
+.footer p {
+  color: #71879a;
+
+  margin-top: 10px;
+}
+
+/* =========================================
+   RESPONSIVE DESIGN
+========================================= */
+
+@media (max-width: 1100px) {
+
+  .dashboard-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .platform-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .team-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .monitor-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-3d {
+    height: 500px;
+  }
+
+  .dashboard-machine-section {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-machine-info {
+    padding-bottom: 20px;
+  }
+
+  .dashboard-machine-view {
+    min-height: 500px;
+  }
+}
+
+@media (max-width: 700px) {
 
   .navbar {
     padding: 0 5%;
   }
-
-  .hero {
-    padding: 50px 5%;
-
-    gap: 20px;
-  }
-
-  .hero h1 {
-    font-size: 58px;
-  }
-
-  .platform-flow {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .platform-flow::before {
-    display: none;
-  }
-
-  .platform-monitor {
-    flex-direction: column;
-
-    align-items: flex-start;
-  }
-
-}
-
-
-@media (max-width: 800px) {
 
   .nav-links {
     display: none;
   }
 
   .hero {
-    flex-direction: column;
-
-    min-height: auto;
-
-    padding-top: 80px;
-
-    text-align: center;
-  }
-
-  .hero-content {
-    width: 100%;
-  }
-
-  .description {
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .buttons {
-    justify-content: center;
-  }
-
-  .three-d-container {
-    width: 100%;
-
-    height: 450px;
-  }
-
-  .monitor-stats {
-    width: 100%;
-
-    display: grid;
-
-    grid-template-columns: repeat(2, 1fr);
-
-    gap: 25px;
-  }
-
-}
-
-
-@media (max-width: 600px) {
-
-  .navbar {
-    height: 70px;
-
-    padding: 0 20px;
-  }
-
-  .logo {
-    font-size: 16px;
-
-    letter-spacing: 1px;
-  }
-
-  .login-btn {
-    padding: 8px 18px;
-  }
-
-  .hero {
-    padding: 60px 20px 30px;
-  }
-
-  .small-title {
-    font-size: 10px;
-
-    letter-spacing: 3px;
+    padding: 60px 5%;
   }
 
   .hero h1 {
-    font-size: 48px;
-
-    letter-spacing: -1px;
+    font-size: 52px;
   }
 
-  .description {
-    font-size: 15px;
+  .hero-description {
+    font-size: 16px;
   }
 
-  .buttons {
+  .hero-buttons {
     flex-direction: column;
 
-    align-items: center;
+    width: 220px;
   }
 
-  .primary-btn,
-  .secondary-btn {
-    width: 200px;
+  .platform-section,
+  .technology-section,
+  .team-section,
+  .monitor-section {
+    padding: 75px 5%;
   }
 
-  .three-d-container {
-    height: 380px;
-  }
-
-  .platform-section {
-    padding: 80px 20px;
-  }
-
-  .platform-description {
-    font-size: 15px;
-  }
-
-  .platform-flow {
+  .platform-grid,
+  .dashboard-cards,
+  .team-grid,
+  .monitor-grid,
+  .tech-grid {
     grid-template-columns: 1fr;
   }
 
-  .platform-card {
+  .machine-info {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-page {
+    padding: 80px 5%;
+  }
+
+  .dashboard-page h1 {
+    font-size: 32px;
+  }
+
+  .section-title {
+    font-size: 32px;
+  }
+
+  .hero-3d {
+    height: 450px;
+  }
+
+  .dashboard-machine-section {
     min-height: auto;
   }
 
-  .platform-monitor {
-    padding: 25px 20px;
+  .dashboard-machine-info {
+    padding: 35px 25px;
   }
 
-  .technology-section,
-  .team-section {
-    padding: 80px 20px;
+  .dashboard-machine-view {
+    min-height: 450px;
   }
-
 }
