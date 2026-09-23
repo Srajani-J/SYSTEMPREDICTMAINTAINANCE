@@ -12,9 +12,7 @@ function Home() {
   return (
     <div className="home">
 
-      {/* ==========================================
-          NAVBAR
-      ========================================== */}
+      {/* NAVBAR */}
 
       <nav className="navbar">
 
@@ -23,13 +21,23 @@ function Home() {
         </div>
 
         <div className="nav-links">
-          <a href="#home">Home</a>
 
-          <a href="#platform">Platform</a>
+          <a href="#home">
+            Home
+          </a>
 
-          <a href="#technology">Technology</a>
+          <a href="#platform">
+            Platform
+          </a>
 
-          <a href="#team">Team</a>
+          <a href="#technology">
+            Technology
+          </a>
+
+          <a href="#team">
+            Team
+          </a>
+
         </div>
 
         <button className="login-btn">
@@ -39,9 +47,7 @@ function Home() {
       </nav>
 
 
-      {/* ==========================================
-          HERO SECTION
-      ========================================== */}
+      {/* HERO SECTION */}
 
       <section
         className="hero"
@@ -94,9 +100,7 @@ function Home() {
       </section>
 
 
-      {/* ==========================================
-          PLATFORM SECTION
-      ========================================== */}
+      {/* PLATFORM SECTION */}
 
       <section
         className="platform-section"
@@ -246,7 +250,7 @@ function Home() {
         </div>
 
 
-        {/* PLATFORM BOTTOM PANEL */}
+        {/* CURRENT SYSTEM STATUS */}
 
         <div className="platform-monitor">
 
@@ -270,23 +274,54 @@ function Home() {
           <div className="monitor-stats">
 
             <div className="monitor-stat">
-              <strong>98%</strong>
-              <span>Machine Health</span>
+
+              <strong>
+                98%
+              </strong>
+
+              <span>
+                Machine Health
+              </span>
+
             </div>
 
-            <div className="monitor-stat">
-              <strong>72°C</strong>
-              <span>Temperature</span>
-            </div>
 
             <div className="monitor-stat">
-              <strong>1.8</strong>
-              <span>Vibration mm/s</span>
+
+              <strong>
+                72°C
+              </strong>
+
+              <span>
+                Temperature
+              </span>
+
             </div>
+
+
+            <div className="monitor-stat">
+
+              <strong>
+                1.8
+              </strong>
+
+              <span>
+                Vibration mm/s
+              </span>
+
+            </div>
+
 
             <div className="monitor-stat healthy">
-              <strong>✓</strong>
-              <span>System Healthy</span>
+
+              <strong>
+                ✓
+              </strong>
+
+              <span>
+                System Healthy
+              </span>
+
             </div>
 
           </div>
@@ -296,9 +331,7 @@ function Home() {
       </section>
 
 
-      {/* ==========================================
-          TECHNOLOGY SECTION
-      ========================================== */}
+      {/* TECHNOLOGY SECTION */}
 
       <section
         className="technology-section"
@@ -321,9 +354,7 @@ function Home() {
       </section>
 
 
-      {/* ==========================================
-          TEAM SECTION
-      ========================================== */}
+      {/* TEAM SECTION */}
 
       <section
         className="team-section"

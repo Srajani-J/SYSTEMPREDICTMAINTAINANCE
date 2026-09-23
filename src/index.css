@@ -1,7 +1,8 @@
-/* =========================================
+/* =========================================================
    SYSTEMSMARTPREDICT
    MEMBER 1 - FRONTEND + 3D UI
-========================================= */
+   COMPLETE INDEX.CSS
+   ========================================================= */
 
 * {
   margin: 0;
@@ -29,27 +30,38 @@ a {
   color: inherit;
 }
 
-/* =========================================
+button {
+  cursor: pointer;
+}
+
+
+/* =========================================================
    HOME
-========================================= */
+   ========================================================= */
 
 .home {
   min-height: 100vh;
 
+  color: white;
+
   background:
     radial-gradient(
-      circle at 75% 30%,
-      #064e7a 0%,
-      #03152b 30%,
-      #020817 65%
-    );
-
-  color: white;
+      circle at 75% 20%,
+      rgba(0, 191, 255, 0.16),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 15% 60%,
+      rgba(0, 100, 180, 0.08),
+      transparent 35%
+    ),
+    #020817;
 }
 
-/* =========================================
+
+/* =========================================================
    NAVBAR
-========================================= */
+   ========================================================= */
 
 .navbar {
   height: 80px;
@@ -60,32 +72,38 @@ a {
   align-items: center;
   justify-content: space-between;
 
-  background: rgba(2, 8, 23, 0.85);
+  background: rgba(2, 8, 23, 0.88);
 
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(0, 191, 255, 0.15);
 
-  position: relative;
+  position: sticky;
+  top: 0;
 
-  z-index: 100;
+  z-index: 1000;
+
+  backdrop-filter: blur(14px);
 }
 
 .logo {
   font-size: 24px;
-
   font-weight: 800;
 
   letter-spacing: 1px;
 
   color: white;
+
+  white-space: nowrap;
 }
 
 .logo span {
   color: #00bfff;
+
+  text-shadow:
+    0 0 12px rgba(0, 191, 255, 0.45);
 }
 
 .nav-links {
   display: flex;
-
   align-items: center;
 
   gap: 38px;
@@ -101,6 +119,9 @@ a {
 
 .nav-links a:hover {
   color: #00bfff;
+
+  text-shadow:
+    0 0 12px rgba(0, 191, 255, 0.4);
 }
 
 .login-btn {
@@ -114,8 +135,6 @@ a {
 
   border-radius: 8px;
 
-  cursor: pointer;
-
   transition: 0.3s ease;
 }
 
@@ -125,12 +144,15 @@ a {
   color: #020817;
 
   box-shadow:
-    0 0 20px rgba(0, 191, 255, 0.4);
+    0 0 20px rgba(0, 191, 255, 0.5);
+
+  transform: translateY(-2px);
 }
 
-/* =========================================
+
+/* =========================================================
    HERO
-========================================= */
+   ========================================================= */
 
 .hero {
   min-height: 685px;
@@ -148,13 +170,33 @@ a {
   overflow: hidden;
 }
 
+.hero::before {
+  content: "";
+
+  position: absolute;
+
+  width: 500px;
+  height: 500px;
+
+  right: -180px;
+  top: 50px;
+
+  border-radius: 50%;
+
+  background: rgba(0, 191, 255, 0.08);
+
+  filter: blur(100px);
+
+  pointer-events: none;
+}
+
 .hero-content {
   position: relative;
 
   z-index: 2;
 }
 
-.hero-label {
+.small-title {
   color: #00bfff;
 
   font-size: 13px;
@@ -174,17 +216,20 @@ a {
   margin-bottom: 35px;
 
   font-weight: 800;
+
+  letter-spacing: -2px;
 }
 
 .hero h1 span {
   color: #00bfff;
 
   text-shadow:
-    0 0 10px rgba(0, 191, 255, 0.5),
-    0 0 30px rgba(0, 191, 255, 0.25);
+    0 0 10px rgba(0, 191, 255, 0.6),
+    0 0 30px rgba(0, 191, 255, 0.3),
+    0 0 60px rgba(0, 191, 255, 0.15);
 }
 
-.hero-description {
+.description {
   max-width: 580px;
 
   color: #9db7ca;
@@ -196,7 +241,7 @@ a {
   margin-bottom: 38px;
 }
 
-.hero-buttons {
+.buttons {
   display: flex;
 
   gap: 18px;
@@ -207,7 +252,7 @@ a {
 
   background: #00bfff;
 
-  color: white;
+  color: #020817;
 
   border: none;
 
@@ -215,47 +260,50 @@ a {
 
   font-size: 15px;
 
-  font-weight: 600;
-
-  cursor: pointer;
+  font-weight: 700;
 
   transition: 0.3s ease;
+
+  box-shadow:
+    0 0 20px rgba(0, 191, 255, 0.15);
 }
 
 .primary-btn:hover {
   transform: translateY(-3px);
 
   box-shadow:
-    0 0 30px rgba(0, 191, 255, 0.45);
+    0 0 30px rgba(0, 191, 255, 0.5);
 }
 
 .secondary-btn {
   padding: 15px 30px;
 
-  background: transparent;
+  background: rgba(0, 191, 255, 0.03);
 
   color: white;
 
-  border: 1px solid rgba(0, 191, 255, 0.45);
+  border: 1px solid rgba(0, 191, 255, 0.5);
 
   border-radius: 8px;
 
   font-size: 15px;
 
-  cursor: pointer;
-
   transition: 0.3s ease;
 }
 
 .secondary-btn:hover {
-  background: rgba(0, 191, 255, 0.1);
+  background: rgba(0, 191, 255, 0.12);
 
   border-color: #00bfff;
+
+  box-shadow:
+    0 0 20px rgba(0, 191, 255, 0.15);
 }
 
-/* =========================================
+
+/* =========================================================
    3D SCENE
-========================================= */
+   ========================================================= */
 
 .hero-3d {
   width: 100%;
@@ -267,30 +315,30 @@ a {
 
 .three-scene {
   width: 100%;
-
   height: 100%;
 }
 
-/* =========================================
+
+/* =========================================================
    SENSOR HUD
-========================================= */
+   ========================================================= */
 
 .sensor-label-card {
   min-width: 150px;
 
   padding: 12px 16px;
 
-  background: rgba(2, 8, 23, 0.78);
+  background: rgba(2, 8, 23, 0.82);
 
-  border: 1px solid rgba(0, 191, 255, 0.55);
+  border: 1px solid rgba(0, 191, 255, 0.65);
 
   border-radius: 10px;
 
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px);
 
   box-shadow:
-    0 0 20px rgba(0, 191, 255, 0.2),
-    inset 0 0 15px rgba(0, 191, 255, 0.04);
+    0 0 20px rgba(0, 191, 255, 0.25),
+    inset 0 0 15px rgba(0, 191, 255, 0.05);
 
   color: white;
 
@@ -317,9 +365,10 @@ a {
   margin-top: 3px;
 }
 
-/* =========================================
+
+/* =========================================================
    GENERAL SECTIONS
-========================================= */
+   ========================================================= */
 
 section {
   scroll-margin-top: 80px;
@@ -328,244 +377,443 @@ section {
 .platform-section,
 .technology-section,
 .team-section {
-  padding: 100px 7%;
+  position: relative;
+
+  padding: 110px 7%;
 
   background: #020817;
+
+  overflow: hidden;
 }
 
-.section-title {
-  text-align: center;
 
+/* =========================================================
+   SECTION LABEL
+   ========================================================= */
+
+.section-label {
+  color: #00bfff;
+
+  font-size: 12px;
+
+  font-weight: 700;
+
+  letter-spacing: 4px;
+
+  margin-bottom: 18px;
+}
+
+
+/* =========================================================
+   PLATFORM HEADING
+   ========================================================= */
+
+.platform-section h2,
+.technology-section h2,
+.team-section h2 {
   color: white;
 
-  font-size: 42px;
+  font-size: clamp(36px, 4vw, 52px);
 
-  margin-bottom: 15px;
+  line-height: 1.1;
+
+  margin-bottom: 20px;
 }
 
-.section-subtitle {
-  text-align: center;
+.platform-section h2 span {
+  color: #00bfff;
+
+  text-shadow:
+    0 0 15px rgba(0, 191, 255, 0.35);
+}
+
+.platform-description {
+  max-width: 760px;
 
   color: #8faec7;
 
-  max-width: 650px;
+  font-size: 17px;
 
-  margin: 0 auto 55px;
+  line-height: 1.8;
 
-  line-height: 1.7;
+  margin-bottom: 55px;
 }
 
-/* =========================================
-   PLATFORM
-========================================= */
 
-.platform-grid {
+/* =========================================================
+   PLATFORM FLOW
+   ========================================================= */
+
+.platform-flow {
   display: grid;
 
   grid-template-columns: repeat(4, 1fr);
 
   gap: 22px;
+
+  margin-top: 30px;
 }
 
 .platform-card {
-  padding: 30px;
+  position: relative;
 
-  min-height: 190px;
+  min-height: 350px;
 
-  background: rgba(4, 25, 48, 0.75);
+  padding: 28px;
 
-  border: 1px solid rgba(0, 191, 255, 0.25);
+  overflow: hidden;
 
-  border-radius: 18px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(5, 34, 62, 0.95),
+      rgba(2, 15, 31, 0.95)
+    );
 
-  transition: 0.3s ease;
+  border: 1px solid rgba(0, 191, 255, 0.30);
+
+  border-radius: 20px;
 
   box-shadow:
-    0 0 25px rgba(0, 191, 255, 0.05);
+    0 15px 40px rgba(0, 0, 0, 0.25),
+    inset 0 0 25px rgba(0, 191, 255, 0.025);
+
+  transition:
+    transform 0.35s ease,
+    border-color 0.35s ease,
+    box-shadow 0.35s ease;
+}
+
+.platform-card::before {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 2px;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #00bfff,
+    transparent
+  );
 }
 
 .platform-card:hover {
-  transform: translateY(-8px);
+  transform: translateY(-10px);
 
   border-color: #00bfff;
 
   box-shadow:
-    0 0 30px rgba(0, 191, 255, 0.2);
+    0 20px 50px rgba(0, 0, 0, 0.35),
+    0 0 35px rgba(0, 191, 255, 0.16);
 }
 
-.platform-card h3 {
+.platform-icon {
+  width: 48px;
+  height: 48px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  margin-bottom: 25px;
+
+  border: 1px solid rgba(0, 191, 255, 0.4);
+
+  border-radius: 12px;
+
   color: #00bfff;
 
-  margin-bottom: 15px;
-}
+  font-size: 23px;
 
-.platform-card p {
-  color: #9db7ca;
-
-  line-height: 1.6;
-}
-
-/* =========================================
-   MONITORING
-========================================= */
-
-.monitor-section {
-  padding: 100px 7%;
-
-  background:
-    radial-gradient(
-      circle at 50% 50%,
-      rgba(0, 191, 255, 0.08),
-      transparent 55%
-    );
-}
-
-.monitor-panel {
-  max-width: 1100px;
-
-  margin: auto;
-
-  padding: 35px;
-
-  background: rgba(4, 25, 48, 0.75);
-
-  border: 1px solid rgba(0, 191, 255, 0.3);
-
-  border-radius: 22px;
+  background: rgba(0, 191, 255, 0.07);
 
   box-shadow:
-    0 0 40px rgba(0, 191, 255, 0.08);
+    0 0 20px rgba(0, 191, 255, 0.08);
 }
 
-.monitor-grid {
-  display: grid;
+.platform-step {
+  color: #6f8da5;
 
-  grid-template-columns: repeat(4, 1fr);
-
-  gap: 20px;
-}
-
-.monitor-card {
-  padding: 25px;
-
-  background: rgba(0, 191, 255, 0.04);
-
-  border: 1px solid rgba(0, 191, 255, 0.2);
-
-  border-radius: 14px;
-
-  text-align: center;
-}
-
-.monitor-card h4 {
-  color: #8faec7;
-
-  margin-bottom: 15px;
-}
-
-.monitor-value {
-  color: #00bfff;
-
-  font-size: 30px;
+  font-size: 12px;
 
   font-weight: 700;
-}
 
-.monitor-status {
-  color: #36e0a0;
-
-  font-size: 13px;
-
-  margin-top: 8px;
-}
-
-/* =========================================
-   TECHNOLOGY
-========================================= */
-
-.tech-grid {
-  max-width: 1000px;
-
-  margin: auto;
-
-  display: grid;
-
-  grid-template-columns: repeat(3, 1fr);
-
-  gap: 20px;
-}
-
-.tech-card {
-  padding: 25px;
-
-  text-align: center;
-
-  background: rgba(4, 25, 48, 0.7);
-
-  border: 1px solid rgba(0, 191, 255, 0.25);
-
-  border-radius: 15px;
-}
-
-.tech-card h3 {
-  color: #00bfff;
-}
-
-.tech-card p {
-  color: #9db7ca;
-
-  margin-top: 10px;
-}
-
-/* =========================================
-   TEAM
-========================================= */
-
-.team-grid {
-  display: grid;
-
-  grid-template-columns: repeat(4, 1fr);
-
-  gap: 22px;
-
-  max-width: 1100px;
-
-  margin: auto;
-}
-
-.team-card {
-  padding: 28px;
-
-  text-align: center;
-
-  background: rgba(4, 25, 48, 0.7);
-
-  border: 1px solid rgba(0, 191, 255, 0.25);
-
-  border-radius: 18px;
-
-  transition: 0.3s ease;
-}
-
-.team-card:hover {
-  transform: translateY(-6px);
-
-  border-color: #00bfff;
-}
-
-.team-card h3 {
-  color: white;
+  letter-spacing: 2px;
 
   margin-bottom: 8px;
 }
 
-.team-card p {
-  color: #00bfff;
+.platform-card h3 {
+  color: white;
+
+  font-size: 20px;
+
+  line-height: 1.3;
+
+  margin-bottom: 14px;
 }
 
-/* =========================================
+.platform-card p {
+  color: #91aabd;
+
+  font-size: 14px;
+
+  line-height: 1.7;
+}
+
+.card-line {
+  width: 100%;
+
+  height: 1px;
+
+  margin-top: 25px;
+
+  background: linear-gradient(
+    90deg,
+    rgba(0, 191, 255, 0.5),
+    transparent
+  );
+}
+
+.card-status {
+  margin-top: 18px;
+
+  color: #36e0a0;
+
+  font-size: 11px;
+
+  font-weight: 700;
+
+  letter-spacing: 1px;
+}
+
+
+/* =========================================================
+   CURRENT SYSTEM STATUS
+   ========================================================= */
+
+.platform-monitor {
+  margin-top: 60px;
+
+  padding: 35px 40px;
+
+  display: grid;
+
+  grid-template-columns: 1fr 1.5fr;
+
+  gap: 40px;
+
+  align-items: center;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(5, 34, 62, 0.95),
+      rgba(2, 14, 29, 0.95)
+    );
+
+  border: 1px solid rgba(0, 191, 255, 0.35);
+
+  border-radius: 22px;
+
+  box-shadow:
+    0 0 40px rgba(0, 191, 255, 0.08),
+    inset 0 0 30px rgba(0, 191, 255, 0.025);
+}
+
+.monitor-label {
+  color: #00bfff;
+
+  font-size: 11px;
+
+  font-weight: 700;
+
+  letter-spacing: 3px;
+
+  margin-bottom: 10px;
+}
+
+.platform-monitor h3 {
+  color: white;
+
+  font-size: 24px;
+
+  margin-bottom: 8px;
+}
+
+.platform-monitor p {
+  color: #8faec7;
+
+  line-height: 1.6;
+}
+
+.monitor-stats {
+  display: grid;
+
+  grid-template-columns: repeat(4, 1fr);
+
+  gap: 15px;
+}
+
+.monitor-stat {
+  min-height: 105px;
+
+  padding: 18px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: center;
+
+  background: rgba(0, 191, 255, 0.045);
+
+  border: 1px solid rgba(0, 191, 255, 0.18);
+
+  border-radius: 14px;
+
+  transition: 0.3s ease;
+}
+
+.monitor-stat:hover {
+  transform: translateY(-4px);
+
+  border-color: rgba(0, 191, 255, 0.55);
+
+  box-shadow:
+    0 0 20px rgba(0, 191, 255, 0.1);
+}
+
+.monitor-stat strong {
+  color: #00bfff;
+
+  font-size: 27px;
+
+  margin-bottom: 7px;
+}
+
+.monitor-stat span {
+  color: #8faec7;
+
+  font-size: 12px;
+}
+
+.monitor-stat.healthy strong,
+.monitor-stat.healthy span {
+  color: #36e0a0;
+}
+
+
+/* =========================================================
+   TECHNOLOGY
+   ========================================================= */
+
+.technology-section {
+  min-height: 480px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: center;
+
+  background:
+    radial-gradient(
+      circle at 75% 45%,
+      rgba(0, 191, 255, 0.10),
+      transparent 40%
+    ),
+    #020817;
+
+  border-top: 1px solid rgba(0, 191, 255, 0.08);
+}
+
+.technology-section::after {
+  content: "";
+
+  position: absolute;
+
+  right: 8%;
+  top: 50%;
+
+  width: 260px;
+  height: 260px;
+
+  border: 1px solid rgba(0, 191, 255, 0.15);
+
+  border-radius: 50%;
+
+  box-shadow:
+    0 0 60px rgba(0, 191, 255, 0.08);
+
+  transform: translateY(-50%);
+
+  pointer-events: none;
+}
+
+.technology-section h2 {
+  max-width: 650px;
+}
+
+.technology-section p {
+  max-width: 700px;
+
+  color: #8faec7;
+
+  font-size: 17px;
+
+  line-height: 1.8;
+}
+
+
+/* =========================================================
+   TEAM
+   ========================================================= */
+
+.team-section {
+  min-height: 400px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: center;
+
+  background:
+    linear-gradient(
+      180deg,
+      #020817,
+      #031426
+    );
+
+  border-top: 1px solid rgba(0, 191, 255, 0.08);
+}
+
+.team-section h2 {
+  max-width: 700px;
+}
+
+.team-section p {
+  max-width: 650px;
+
+  color: #8faec7;
+
+  font-size: 17px;
+
+  line-height: 1.8;
+}
+
+
+/* =========================================================
    DASHBOARD
-========================================= */
+   ========================================================= */
 
 .dashboard-page {
   min-height: 100vh;
@@ -587,8 +835,6 @@ section {
   font-size: 42px;
 
   margin-bottom: 8px;
-
-  color: white;
 }
 
 .dashboard-subtitle {
@@ -599,9 +845,10 @@ section {
   margin-bottom: 45px;
 }
 
-/* =========================================
+
+/* =========================================================
    DASHBOARD CARDS
-========================================= */
+   ========================================================= */
 
 .dashboard-cards {
   display: grid;
@@ -618,7 +865,12 @@ section {
 
   min-height: 175px;
 
-  background: rgba(4, 25, 48, 0.75);
+  background:
+    linear-gradient(
+      145deg,
+      rgba(5, 34, 62, 0.9),
+      rgba(2, 15, 31, 0.9)
+    );
 
   border: 1px solid rgba(0, 191, 255, 0.35);
 
@@ -672,9 +924,10 @@ section {
   color: #00bfff;
 }
 
-/* =========================================
+
+/* =========================================================
    DASHBOARD 3D MACHINE
-========================================= */
+   ========================================================= */
 
 .dashboard-machine-section {
   margin-top: 35px;
@@ -785,19 +1038,16 @@ section {
 
   0% {
     opacity: 1;
-
     transform: scale(1);
   }
 
   50% {
     opacity: 0.5;
-
     transform: scale(1.25);
   }
 
   100% {
     opacity: 1;
-
     transform: scale(1);
   }
 
@@ -819,16 +1069,22 @@ section {
   display: block;
 }
 
-/* =========================================
+
+/* =========================================================
    MACHINE OVERVIEW
-========================================= */
+   ========================================================= */
 
 .machine-summary {
   padding: 30px;
 
   border-radius: 20px;
 
-  background: rgba(4, 25, 48, 0.7);
+  background:
+    linear-gradient(
+      145deg,
+      rgba(5, 34, 62, 0.9),
+      rgba(2, 15, 31, 0.9)
+    );
 
   border: 1px solid rgba(0, 191, 255, 0.3);
 
@@ -857,6 +1113,8 @@ section {
 
   background: rgba(0, 191, 255, 0.05);
 
+  border: 1px solid rgba(0, 191, 255, 0.08);
+
   border-radius: 10px;
 
   color: #c5d7e5;
@@ -866,9 +1124,10 @@ section {
   color: white;
 }
 
-/* =========================================
+
+/* =========================================================
    FOOTER
-========================================= */
+   ========================================================= */
 
 .footer {
   padding: 45px 7%;
@@ -898,25 +1157,26 @@ section {
   margin-top: 10px;
 }
 
-/* =========================================
-   RESPONSIVE DESIGN
-========================================= */
+
+/* =========================================================
+   RESPONSIVE - TABLET
+   ========================================================= */
 
 @media (max-width: 1100px) {
+
+  .platform-flow {
+    grid-template-columns: repeat(2, 1fr);
+  }
 
   .dashboard-cards {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .platform-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .platform-monitor {
+    grid-template-columns: 1fr;
   }
 
-  .team-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .monitor-grid {
+  .monitor-stats {
     grid-template-columns: repeat(2, 1fr);
   }
 
@@ -939,12 +1199,29 @@ section {
   .dashboard-machine-view {
     min-height: 500px;
   }
+
+  .technology-section::after {
+    opacity: 0.5;
+  }
 }
+
+
+/* =========================================================
+   RESPONSIVE - MOBILE
+   ========================================================= */
 
 @media (max-width: 700px) {
 
   .navbar {
     padding: 0 5%;
+  }
+
+  .logo {
+    font-size: 19px;
+  }
+
+  .login-btn {
+    padding: 9px 18px;
   }
 
   .nav-links {
@@ -957,13 +1234,15 @@ section {
 
   .hero h1 {
     font-size: 52px;
+
+    letter-spacing: -1px;
   }
 
-  .hero-description {
+  .description {
     font-size: 16px;
   }
 
-  .hero-buttons {
+  .buttons {
     flex-direction: column;
 
     width: 220px;
@@ -971,21 +1250,42 @@ section {
 
   .platform-section,
   .technology-section,
-  .team-section,
-  .monitor-section {
-    padding: 75px 5%;
+  .team-section {
+    padding: 80px 5%;
   }
 
-  .platform-grid,
-  .dashboard-cards,
-  .team-grid,
-  .monitor-grid,
-  .tech-grid {
+  .platform-flow {
     grid-template-columns: 1fr;
   }
 
-  .machine-info {
-    grid-template-columns: 1fr;
+  .platform-card {
+    min-height: auto;
+  }
+
+  .platform-monitor {
+    padding: 25px;
+
+    gap: 25px;
+  }
+
+  .monitor-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .monitor-stat {
+    min-height: 90px;
+  }
+
+  .technology-section {
+    min-height: 400px;
+  }
+
+  .technology-section::after {
+    display: none;
+  }
+
+  .team-section {
+    min-height: 350px;
   }
 
   .dashboard-page {
@@ -996,12 +1296,12 @@ section {
     font-size: 32px;
   }
 
-  .section-title {
-    font-size: 32px;
+  .dashboard-cards {
+    grid-template-columns: 1fr;
   }
 
-  .hero-3d {
-    height: 450px;
+  .machine-info {
+    grid-template-columns: 1fr;
   }
 
   .dashboard-machine-section {
@@ -1015,4 +1315,38 @@ section {
   .dashboard-machine-view {
     min-height: 450px;
   }
+
+  .hero-3d {
+    height: 450px;
+  }
+
+}
+
+
+/* =========================================================
+   EXTRA SMALL MOBILE
+   ========================================================= */
+
+@media (max-width: 450px) {
+
+  .hero h1 {
+    font-size: 44px;
+  }
+
+  .small-title {
+    font-size: 10px;
+
+    letter-spacing: 3px;
+  }
+
+  .monitor-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .platform-section h2,
+  .technology-section h2,
+  .team-section h2 {
+    font-size: 34px;
+  }
+
 }

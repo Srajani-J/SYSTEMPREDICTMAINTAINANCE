@@ -7,108 +7,179 @@ import {
 } from "@react-three/drei";
 import { useRef } from "react";
 
-// =====================================================
-// ROTATING MACHINE SHAFT
-// =====================================================
+
+/* =========================================================
+   ROTATING SHAFT
+========================================================= */
 
 function RotatingShaft() {
   const shaftRef = useRef();
 
   useFrame(() => {
     if (shaftRef.current) {
-      shaftRef.current.rotation.z += 0.045;
+      shaftRef.current.rotation.z += 0.025;
     }
   });
 
   return (
-    <group position={[0, 0, 1.28]}>
-      <mesh ref={shaftRef}>
-        <cylinderGeometry args={[0.55, 0.55, 0.28, 32]} />
+    <mesh
+      ref={shaftRef}
+      position={[0, 0, 1.08]}
+      rotation={[Math.PI / 2, 0, 0]}
+    >
+      <cylinderGeometry args={[0.32, 0.32, 1.5, 32]} />
+
+      <meshStandardMaterial
+        color="#42d9ff"
+        emissive="#008fc4"
+        emissiveIntensity={0.8}
+        metalness={0.9}
+        roughness={0.18}
+      />
+    </mesh>
+  );
+}
+
+
+/* =========================================================
+   AI CORE
+========================================================= */
+
+function AICore() {
+  const coreRef = useRef();
+
+  useFrame((state) => {
+    if (coreRef.current) {
+      const pulse =
+        1 +
+        Math.sin(state.clock.elapsedTime * 2.2) * 0.07;
+
+      coreRef.current.scale.set(
+        pulse,
+        pulse,
+        pulse
+      );
+    }
+  });
+
+  return (
+    <mesh
+      ref={coreRef}
+      position={[0, 0, 1.56]}
+    >
+      <sphereGeometry args={[0.42, 32, 32]} />
+
+      <meshStandardMaterial
+        color="#32d9ff"
+        emissive="#00bfff"
+        emissiveIntensity={2.2}
+        metalness={0.35}
+        roughness={0.15}
+      />
+    </mesh>
+  );
+}
+
+
+/* =========================================================
+   AI ENERGY RINGS
+========================================================= */
+
+function EnergyRings() {
+  const ring1Ref = useRef();
+  const ring2Ref = useRef();
+
+  useFrame((state) => {
+    const time = state.clock.elapsedTime;
+
+    if (ring1Ref.current) {
+      ring1Ref.current.rotation.x = time * 0.45;
+      ring1Ref.current.rotation.y = time * 0.3;
+    }
+
+    if (ring2Ref.current) {
+      ring2Ref.current.rotation.x = -time * 0.35;
+      ring2Ref.current.rotation.y = time * 0.4;
+    }
+  });
+
+  return (
+    <group position={[0, 0, 1.56]}>
+
+      <mesh ref={ring1Ref}>
+        <torusGeometry
+          args={[0.68, 0.025, 16, 64]}
+        />
 
         <meshStandardMaterial
-          color="#00bfff"
-          metalness={0.9}
-          roughness={0.18}
+          color="#00d9ff"
           emissive="#00bfff"
           emissiveIntensity={2}
         />
       </mesh>
 
-      {/* Inner shaft */}
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.18, 0.18, 0.45, 32]} />
+
+      <mesh
+        ref={ring2Ref}
+        rotation={[Math.PI / 2, 0, 0]}
+      >
+        <torusGeometry
+          args={[0.82, 0.02, 16, 64]}
+        />
 
         <meshStandardMaterial
-          color="#e0f7ff"
-          metalness={0.9}
-          roughness={0.15}
-          emissive="#00bfff"
-          emissiveIntensity={1}
+          color="#008cff"
+          emissive="#008cff"
+          emissiveIntensity={1.7}
         />
       </mesh>
+
     </group>
   );
 }
 
-// =====================================================
-// AI ENERGY RINGS
-// =====================================================
 
-function EnergyRings() {
-  const ring1 = useRef();
-  const ring2 = useRef();
+/* =========================================================
+   GLOWING SENSOR
+========================================================= */
 
-  useFrame(({ clock }) => {
-    const t = clock.getElapsedTime();
+function GlowingSensor({ position }) {
+  const sensorRef = useRef();
 
-    if (ring1.current) {
-      ring1.current.rotation.z = t * 0.8;
-      ring1.current.rotation.x = Math.sin(t) * 0.2;
-    }
+  useFrame((state) => {
+    if (sensorRef.current) {
+      const pulse =
+        1 +
+        Math.sin(state.clock.elapsedTime * 3) * 0.1;
 
-    if (ring2.current) {
-      ring2.current.rotation.z = -t * 0.6;
-      ring2.current.rotation.y = Math.cos(t) * 0.2;
+      sensorRef.current.scale.set(
+        pulse,
+        pulse,
+        pulse
+      );
     }
   });
 
   return (
-    <group position={[0, 0, 1.3]}>
+    <mesh
+      ref={sensorRef}
+      position={position}
+    >
+      <sphereGeometry args={[0.075, 20, 20]} />
 
-      <mesh ref={ring1}>
-        <torusGeometry args={[0.72, 0.035, 16, 64]} />
-
-        <meshStandardMaterial
-          color="#00ffff"
-          emissive="#00ffff"
-          emissiveIntensity={4}
-          metalness={0.5}
-          roughness={0.1}
-        />
-      </mesh>
-
-      <mesh
-        ref={ring2}
-        rotation={[Math.PI / 2, 0, 0]}
-      >
-        <torusGeometry args={[0.85, 0.025, 16, 64]} />
-
-        <meshStandardMaterial
-          color="#0ea5e9"
-          emissive="#0ea5e9"
-          emissiveIntensity={3}
-          metalness={0.5}
-          roughness={0.1}
-        />
-      </mesh>
-
-    </group>
+      <meshStandardMaterial
+        color="#42f5b3"
+        emissive="#36e0a0"
+        emissiveIntensity={2.5}
+      />
+    </mesh>
   );
 }
 
-// =====================================================
-// SENSOR INDICATOR
-// =====================================================
+
+/* =========================================================
+   SENSOR HUD
+========================================================= */
 
 function SensorIndicator({
   position,
@@ -119,20 +190,45 @@ function SensorIndicator({
   return (
     <Html
       position={position}
-      distanceFactor={6}
       center
+      distanceFactor={5}
+      style={{
+        pointerEvents: "none",
+      }}
     >
       <div className="sensor-label-card">
 
-        <div className="sensor-name">
+        <div
+          style={{
+            color: "#00cfff",
+            fontSize: "9px",
+            fontWeight: "700",
+            letterSpacing: "1px",
+          }}
+        >
           {title}
         </div>
 
-        <div className="sensor-number">
+        <div
+          style={{
+            color: "#ffffff",
+            fontSize: "17px",
+            fontWeight: "800",
+            marginTop: "3px",
+            whiteSpace: "nowrap",
+          }}
+        >
           {value}
         </div>
 
-        <div className="sensor-live">
+        <div
+          style={{
+            color: "#36e0a0",
+            fontSize: "9px",
+            marginTop: "3px",
+            fontWeight: "700",
+          }}
+        >
           ● {status}
         </div>
 
@@ -141,507 +237,388 @@ function SensorIndicator({
   );
 }
 
-// =====================================================
-// GLOWING SENSOR
-// =====================================================
 
-function GlowingSensor({ position }) {
-  const sensorRef = useRef();
+/* =========================================================
+   INDUSTRIAL MACHINE
+========================================================= */
 
-  useFrame(({ clock }) => {
-    const pulse =
-      1 +
-      Math.sin(clock.getElapsedTime() * 4) * 0.25;
-
-    if (sensorRef.current) {
-      sensorRef.current.scale.set(
-        pulse,
-        pulse,
-        pulse
-      );
-    }
-  });
-
+function Machine() {
   return (
-    <group position={position}>
+    <group
+      scale={[1, 1, 1]}
+      position={[0, -0.2, 0]}
+    >
 
-      <mesh ref={sensorRef}>
-        <sphereGeometry args={[0.14, 24, 24]} />
+      {/* MAIN MACHINE BODY */}
+
+      <mesh position={[0, 0, 0]}>
+        <boxGeometry
+          args={[2.4, 1.9, 2]}
+        />
 
         <meshStandardMaterial
-          color="#00ffff"
-          emissive="#00ffff"
-          emissiveIntensity={6}
+          color="#10466a"
+          metalness={0.82}
+          roughness={0.25}
         />
       </mesh>
 
-      {/* Sensor glow ring */}
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.2, 0.025, 12, 32]} />
+
+      {/* MAIN BODY FRONT */}
+
+      <mesh
+        position={[0, 0, 1.05]}
+      >
+        <boxGeometry
+          args={[1.95, 1.45, 0.12]}
+        />
 
         <meshStandardMaterial
-          color="#00ffff"
-          emissive="#00ffff"
-          emissiveIntensity={4}
+          color="#082943"
+          metalness={0.82}
+          roughness={0.22}
         />
       </mesh>
+
+
+      {/* FRONT CYAN PANEL */}
+
+      <mesh
+        position={[0, 0, 1.12]}
+      >
+        <boxGeometry
+          args={[1.6, 1.08, 0.025]}
+        />
+
+        <meshStandardMaterial
+          color="#08739b"
+          emissive="#006f9c"
+          emissiveIntensity={0.65}
+          metalness={0.7}
+          roughness={0.22}
+        />
+      </mesh>
+
+
+      {/* INNER AI PANEL */}
+
+      <mesh
+        position={[0, 0, 1.145]}
+      >
+        <boxGeometry
+          args={[1.35, 0.85, 0.018]}
+        />
+
+        <meshStandardMaterial
+          color="#06243b"
+          emissive="#003e5a"
+          emissiveIntensity={0.35}
+          metalness={0.65}
+          roughness={0.2}
+        />
+      </mesh>
+
+
+      {/* AI CORE */}
+
+      <AICore />
+
+      <EnergyRings />
+
+
+      {/* ROTATING SHAFT */}
+
+      <RotatingShaft />
+
+
+      {/* TOP PANEL */}
+
+      <mesh
+        position={[0, 1.05, 0]}
+      >
+        <boxGeometry
+          args={[2.25, 0.16, 1.8]}
+        />
+
+        <meshStandardMaterial
+          color="#155074"
+          metalness={0.85}
+          roughness={0.25}
+        />
+      </mesh>
+
+
+      {/* TOP CYAN STRIP */}
+
+      <mesh
+        position={[0, 1.145, 0]}
+      >
+        <boxGeometry
+          args={[1.75, 0.025, 1.35]}
+        />
+
+        <meshStandardMaterial
+          color="#087ea8"
+          emissive="#00bfff"
+          emissiveIntensity={0.7}
+        />
+      </mesh>
+
+
+      {/* TOP SENSOR */}
+
+      <GlowingSensor
+        position={[0, 1.2, 0]}
+      />
+
+
+      {/* LEFT SIDE PANEL */}
+
+      <mesh
+        position={[-1.28, 0, 0]}
+      >
+        <boxGeometry
+          args={[0.12, 1.6, 1.65]}
+        />
+
+        <meshStandardMaterial
+          color="#0d3b5c"
+          metalness={0.85}
+          roughness={0.27}
+        />
+      </mesh>
+
+
+      {/* RIGHT SIDE PANEL */}
+
+      <mesh
+        position={[1.28, 0, 0]}
+      >
+        <boxGeometry
+          args={[0.12, 1.6, 1.65]}
+        />
+
+        <meshStandardMaterial
+          color="#0d3b5c"
+          metalness={0.85}
+          roughness={0.27}
+        />
+      </mesh>
+
+
+      {/* LEFT SUPPORT */}
+
+      <mesh
+        position={[-0.9, -1.2, 0]}
+      >
+        <boxGeometry
+          args={[0.22, 0.55, 1.45]}
+        />
+
+        <meshStandardMaterial
+          color="#0a304b"
+          metalness={0.88}
+          roughness={0.27}
+        />
+      </mesh>
+
+
+      {/* RIGHT SUPPORT */}
+
+      <mesh
+        position={[0.9, -1.2, 0]}
+      >
+        <boxGeometry
+          args={[0.22, 0.55, 1.45]}
+        />
+
+        <meshStandardMaterial
+          color="#0a304b"
+          metalness={0.88}
+          roughness={0.27}
+        />
+      </mesh>
+
+
+      {/* MACHINE BASE */}
+
+      <mesh
+        position={[0, -1.48, 0]}
+      >
+        <boxGeometry
+          args={[3, 0.2, 2.3]}
+        />
+
+        <meshStandardMaterial
+          color="#0b2c45"
+          metalness={0.92}
+          roughness={0.25}
+        />
+      </mesh>
+
+
+      {/* BASE GLOW */}
+
+      <mesh
+        position={[0, -1.37, 0]}
+      >
+        <boxGeometry
+          args={[2.35, 0.025, 1.7]}
+        />
+
+        <meshStandardMaterial
+          color="#008bb8"
+          emissive="#00bfff"
+          emissiveIntensity={1}
+        />
+      </mesh>
+
+
+      {/* SENSOR LIGHTS */}
+
+      <GlowingSensor
+        position={[-0.88, 0.72, 1.15]}
+      />
+
+      <GlowingSensor
+        position={[0.88, 0.72, 1.15]}
+      />
+
+      <GlowingSensor
+        position={[-0.88, -0.65, 1.15]}
+      />
+
+
+      {/* TEMPERATURE HUD */}
+
+      <SensorIndicator
+        position={[-1.65, 0.9, 0.8]}
+        title="TEMPERATURE"
+        value="72°C"
+        status="LIVE"
+      />
+
+
+      {/* VIBRATION HUD */}
+
+      <SensorIndicator
+        position={[1.65, 0.55, 0.9]}
+        title="VIBRATION"
+        value="1.8 mm/s"
+        status="NORMAL"
+      />
+
+
+      {/* MOTOR HEALTH HUD */}
+
+      <SensorIndicator
+        position={[-1.65, -0.75, 0.9]}
+        title="MOTOR HEALTH"
+        value="98%"
+        status="HEALTHY"
+      />
 
     </group>
   );
 }
 
-// =====================================================
-// MACHINE PANEL
-// =====================================================
 
-function MachinePanel({ position, rotation }) {
-  return (
-    <mesh position={position} rotation={rotation}>
-      <boxGeometry args={[0.55, 0.75, 0.08]} />
-
-      <meshStandardMaterial
-        color="#0b2940"
-        metalness={0.85}
-        roughness={0.2}
-        emissive="#063b5c"
-        emissiveIntensity={0.5}
-      />
-    </mesh>
-  );
-}
-
-// =====================================================
-// INDUSTRIAL MACHINE
-// =====================================================
-
-function Machine() {
-  return (
-    <Float
-      speed={1.2}
-      rotationIntensity={0.12}
-      floatIntensity={0.35}
-    >
-
-      <group>
-
-        {/* ==========================================
-            MAIN MACHINE BODY
-        ========================================== */}
-
-        <mesh position={[0, 0, 0]}>
-
-          <boxGeometry
-            args={[3.2, 2, 2]}
-          />
-
-          <meshStandardMaterial
-            color="#075985"
-            metalness={0.9}
-            roughness={0.22}
-          />
-
-        </mesh>
-
-
-        {/* ==========================================
-            TOP METAL PANEL
-        ========================================== */}
-
-        <mesh position={[0, 1.02, 0]}>
-
-          <boxGeometry
-            args={[2.9, 0.12, 1.8]}
-          />
-
-          <meshStandardMaterial
-            color="#0c4a6e"
-            metalness={0.95}
-            roughness={0.18}
-          />
-
-        </mesh>
-
-
-        {/* ==========================================
-            FRONT PANEL
-        ========================================== */}
-
-        <mesh position={[0, 0, 1.05]}>
-
-          <boxGeometry
-            args={[2.5, 1.45, 0.15]}
-          />
-
-          <meshStandardMaterial
-            color="#02182d"
-            metalness={0.85}
-            roughness={0.16}
-          />
-
-        </mesh>
-
-
-        {/* ==========================================
-            FRONT PANEL FRAME
-        ========================================== */}
-
-        <mesh position={[0, 0, 1.15]}>
-
-          <boxGeometry
-            args={[2.15, 1.12, 0.04]}
-          />
-
-          <meshStandardMaterial
-            color="#0c334d"
-            metalness={0.7}
-            roughness={0.25}
-          />
-
-        </mesh>
-
-
-        {/* ==========================================
-            AI CORE
-        ========================================== */}
-
-        <mesh position={[0, 0, 1.23]}>
-
-          <sphereGeometry
-            args={[0.45, 40, 40]}
-          />
-
-          <meshStandardMaterial
-            color="#00bfff"
-            emissive="#00bfff"
-            emissiveIntensity={4}
-            metalness={0.5}
-            roughness={0.12}
-          />
-
-        </mesh>
-
-
-        {/* ==========================================
-            AI CORE RINGS
-        ========================================== */}
-
-        <EnergyRings />
-
-
-        {/* ==========================================
-            ROTATING SHAFT
-        ========================================== */}
-
-        <RotatingShaft />
-
-
-        {/* ==========================================
-            TOP SENSOR HOUSING
-        ========================================== */}
-
-        <mesh position={[0, 1.35, 0]}>
-
-          <cylinderGeometry
-            args={[0.18, 0.18, 0.35, 32]}
-          />
-
-          <meshStandardMaterial
-            color="#0ea5e9"
-            metalness={0.8}
-            roughness={0.2}
-            emissive="#00ffff"
-            emissiveIntensity={2}
-          />
-
-        </mesh>
-
-
-        <GlowingSensor
-          position={[0, 1.58, 0]}
-        />
-
-
-        {/* ==========================================
-            LEFT SENSOR
-        ========================================== */}
-
-        <GlowingSensor
-          position={[-1.75, 0.45, 0]}
-        />
-
-
-        {/* ==========================================
-            RIGHT SENSOR
-        ========================================== */}
-
-        <GlowingSensor
-          position={[1.75, 0.45, 0]}
-        />
-
-
-        {/* ==========================================
-            MACHINE SIDE PANELS
-        ========================================== */}
-
-        <MachinePanel
-          position={[-1.63, 0, 0]}
-          rotation={[0, Math.PI / 2, 0]}
-        />
-
-        <MachinePanel
-          position={[1.63, 0, 0]}
-          rotation={[0, Math.PI / 2, 0]}
-        />
-
-
-        {/* ==========================================
-            LEFT SUPPORT
-        ========================================== */}
-
-        <mesh
-          position={[-1.15, -1.25, 0]}
-        >
-
-          <boxGeometry
-            args={[0.5, 0.5, 1.5]}
-          />
-
-          <meshStandardMaterial
-            color="#082f49"
-            metalness={0.95}
-            roughness={0.25}
-          />
-
-        </mesh>
-
-
-        {/* ==========================================
-            RIGHT SUPPORT
-        ========================================== */}
-
-        <mesh
-          position={[1.15, -1.25, 0]}
-        >
-
-          <boxGeometry
-            args={[0.5, 0.5, 1.5]}
-          />
-
-          <meshStandardMaterial
-            color="#082f49"
-            metalness={0.95}
-            roughness={0.25}
-          />
-
-        </mesh>
-
-
-        {/* ==========================================
-            MACHINE BASE
-        ========================================== */}
-
-        <mesh
-          position={[0, -1.55, 0]}
-        >
-
-          <boxGeometry
-            args={[4.2, 0.3, 2.6]}
-          />
-
-          <meshStandardMaterial
-            color="#031525"
-            metalness={0.98}
-            roughness={0.2}
-          />
-
-        </mesh>
-
-
-        {/* ==========================================
-            BASE GLOW
-        ========================================== */}
-
-        <mesh
-          position={[0, -1.35, 0]}
-        >
-
-          <boxGeometry
-            args={[3.6, 0.08, 2.1]}
-          />
-
-          <meshStandardMaterial
-            color="#00bfff"
-            emissive="#00bfff"
-            emissiveIntensity={2.5}
-          />
-
-        </mesh>
-
-
-        {/* ==========================================
-            TOP COMPONENTS
-        ========================================== */}
-
-        <mesh
-          position={[0.8, 1.2, 0]}
-        >
-
-          <boxGeometry
-            args={[0.35, 0.35, 0.35]}
-          />
-
-          <meshStandardMaterial
-            color="#0ea5e9"
-            metalness={0.8}
-            roughness={0.18}
-            emissive="#0369a1"
-            emissiveIntensity={1}
-          />
-
-        </mesh>
-
-
-        <mesh
-          position={[-0.8, 1.1, 0]}
-        >
-
-          <boxGeometry
-            args={[0.3, 0.3, 0.3]}
-          />
-
-          <meshStandardMaterial
-            color="#0ea5e9"
-            metalness={0.8}
-            roughness={0.18}
-            emissive="#0369a1"
-            emissiveIntensity={1}
-          />
-
-        </mesh>
-
-
-        {/* ==========================================
-            FRONT STATUS LIGHTS
-        ========================================== */}
-
-        <GlowingSensor
-          position={[-0.8, -0.55, 1.2]}
-        />
-
-        <GlowingSensor
-          position={[0.8, -0.55, 1.2]}
-        />
-
-
-        {/* ==========================================
-            SENSOR INFORMATION
-        ========================================== */}
-
-        <SensorIndicator
-          position={[1.45, 1.25, 1]}
-          title="TEMPERATURE"
-          value="72°C"
-          status="LIVE"
-        />
-
-
-        <SensorIndicator
-          position={[-2.15, 0.8, 0.5]}
-          title="VIBRATION"
-          value="1.8 mm/s"
-          status="NORMAL"
-        />
-
-
-        <SensorIndicator
-          position={[1.9, -0.8, 0.5]}
-          title="MOTOR HEALTH"
-          value="98%"
-          status="HEALTHY"
-        />
-
-      </group>
-
-    </Float>
-  );
-}
-
-// =====================================================
-// MAIN 3D SCENE
-// =====================================================
+/* =========================================================
+   MAIN 3D SCENE
+========================================================= */
 
 function ThreeDScene() {
-
   return (
-    <div className="three-d-container">
+    <div className="hero-3d">
 
       <Canvas
         camera={{
-          position: [5, 3, 6],
-          fov: 45,
+          position: [4.5, 2.5, 6.5],
+          fov: 42,
         }}
+
         dpr={[1, 2]}
+
+        gl={{
+          antialias: true,
+        }}
       >
 
-        {/* ==========================================
-            LIGHTING
-        ========================================== */}
+        {/* AMBIENT LIGHT */}
 
         <ambientLight
-          intensity={1.2}
+          intensity={1.15}
         />
+
+
+        {/* MAIN WHITE LIGHT */}
+
+        <directionalLight
+          position={[5, 6, 6]}
+          intensity={2.4}
+        />
+
+
+        {/* CYAN LIGHT */}
 
         <pointLight
-          position={[5, 5, 5]}
-          intensity={120}
+          position={[3, 2, 4]}
+          color="#00bfff"
+          intensity={11}
+          distance={10}
         />
+
+
+        {/* BLUE SIDE LIGHT */}
 
         <pointLight
-          position={[-5, 2, 3]}
-          intensity={80}
+          position={[-3, 1, 2]}
+          color="#087fff"
+          intensity={8}
+          distance={8}
         />
+
+
+        {/* FLOOR LIGHT */}
 
         <pointLight
-          position={[0, -3, 4]}
-          intensity={60}
-        />
-
-        <pointLight
-          position={[0, 4, -3]}
-          intensity={50}
+          position={[0, -3, 2]}
+          color="#00bfff"
+          intensity={5}
+          distance={7}
         />
 
 
-        {/* ==========================================
-            FLOATING AI PARTICLES
-        ========================================== */}
+        {/* FLOATING PARTICLES */}
 
         <Sparkles
-          count={80}
-          scale={[8, 6, 6]}
-          size={2}
-          speed={0.35}
+          count={75}
+          scale={[6, 5, 6]}
+          size={1.5}
+          speed={0.25}
         />
 
 
-        {/* ==========================================
-            INDUSTRIAL MACHINE
-        ========================================== */}
+        {/* FLOATING MACHINE */}
 
-        <Machine />
+        <Float
+          speed={1}
+          rotationIntensity={0.08}
+          floatIntensity={0.2}
+        >
+          <Machine />
+        </Float>
 
 
-        {/* ==========================================
-            CAMERA CONTROLS
-        ========================================== */}
+        {/* CAMERA */}
 
         <OrbitControls
           enableZoom={false}
           enablePan={false}
-          autoRotate
-          autoRotateSpeed={0.7}
-          minPolarAngle={Math.PI / 3}
-          maxPolarAngle={Math.PI / 1.8}
+          autoRotate={true}
+          autoRotateSpeed={0.35}
+          minPolarAngle={Math.PI / 2.7}
+          maxPolarAngle={Math.PI / 1.9}
         />
 
       </Canvas>
@@ -649,5 +626,6 @@ function ThreeDScene() {
     </div>
   );
 }
+
 
 export default ThreeDScene;
