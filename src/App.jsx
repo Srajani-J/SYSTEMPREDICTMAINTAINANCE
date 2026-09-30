@@ -14,11 +14,12 @@ function App() {
     <BrowserRouter>
       <Routes>
 
-        {/* Member 1 - Home */}
+        {/* Home */}
         <Route path="/" element={<Home />} />
 
-        {/* Member 2 - Authentication */}
+        {/* Authentication */}
         <Route path="/login" element={<Login />} />
+
         <Route path="/register" element={<Register />} />
 
         {/* Protected Profile */}
@@ -31,7 +32,7 @@ function App() {
           }
         />
 
-        {/* Protected Member 3 Dashboard */}
+        {/* Protected Dashboard - Member 3 */}
         <Route
           path="/dashboard"
           element={
