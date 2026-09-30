@@ -1,3 +1,5 @@
+
+import { Link } from "react-router-dom";
 import ThreeDScene from "../components/ThreeDScene";
 
 function Home() {
@@ -10,21 +12,19 @@ function Home() {
   };
 
   return (
-    <div className="home">
+    <div className="home" id="home">
 
-      {/* NAVBAR */}
-
+      {/* ================= NAVBAR ================= */}
       <nav className="navbar">
 
+        {/* LOGO */}
         <div className="logo">
           SYSTEM<span>SMART</span>PREDICT
         </div>
 
+        {/* NAVIGATION LINKS */}
         <div className="nav-links">
-
-          <a href="#home">
-            Home
-          </a>
+          <a href="#home">Home</a>
 
           <a href="#platform">
             Platform
@@ -37,45 +37,69 @@ function Home() {
           <a href="#team">
             Team
           </a>
-
         </div>
 
-        <button className="login-btn">
-          Login
-        </button>
+        {/* AUTHENTICATION BUTTONS */}
+        <div
+          style={{
+            display: "flex",
+            gap: "10px",
+            alignItems: "center",
+          }}
+        >
+          <Link
+            to="/login"
+            className="login-btn"
+            style={{
+              textDecoration: "none",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            Login
+          </Link>
+
+          <Link
+            to="/register"
+            className="login-btn"
+            style={{
+              textDecoration: "none",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            Register
+          </Link>
+        </div>
 
       </nav>
 
-
-      {/* HERO SECTION */}
-
-      <section
-        className="hero"
-        id="home"
-      >
+      {/* ================= HERO SECTION ================= */}
+      <section className="hero">
 
         <div className="hero-content">
 
-          <div className="small-title">
+          <div className="hero-label">
             INDUSTRIAL AI INTELLIGENCE
           </div>
 
           <h1>
             Predict.
             <br />
-
-            Explain.
+            <span>Explain.</span>
             <br />
-
-            <span>Prevent.</span>
+            Prevent.
           </h1>
 
-          <p className="description">
-            Explainable AI-powered predictive maintenance
-            and industrial decision support system.
+          <p>
+            Transform industrial operations with AI-powered
+            predictive maintenance, real-time monitoring,
+            and intelligent decision support.
           </p>
 
-          <div className="buttons">
+          <div className="hero-buttons">
 
             <button
               className="primary-btn"
@@ -84,60 +108,59 @@ function Home() {
               Explore Platform
             </button>
 
-            <button className="secondary-btn">
-              Watch Demo
-            </button>
+            <Link
+              to="/login"
+              className="secondary-btn"
+              style={{
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              Get Started
+            </Link>
 
           </div>
 
         </div>
 
-
         {/* 3D MACHINE */}
-
-        <ThreeDScene />
+        <div className="hero-3d">
+          <ThreeDScene />
+        </div>
 
       </section>
 
-
-      {/* PLATFORM SECTION */}
-
+      {/* ================= PLATFORM SECTION ================= */}
       <section
-        className="platform-section"
         id="platform"
+        className="platform-section"
       >
 
-        <div className="section-label">
-          SMART INDUSTRIAL PLATFORM
+        <div className="section-heading">
+
+          <div className="hero-label">
+            SMART INDUSTRIAL PLATFORM
+          </div>
+
+          <h2>
+            Intelligence for
+            <span> Every Machine</span>
+          </h2>
+
+          <p>
+            Monitor equipment, detect anomalies, predict failures,
+            and make data-driven maintenance decisions.
+          </p>
+
         </div>
 
-        <h2>
-          From Machine Data
-          <span> to Smart Decisions.</span>
-        </h2>
-
-        <p className="platform-description">
-          SystemSmartPredict continuously monitors industrial
-          equipment, analyzes machine conditions, predicts
-          possible failures, and helps teams prevent costly
-          downtime.
-        </p>
-
-
-        {/* PLATFORM FLOW */}
-
-        <div className="platform-flow">
-
-          {/* CARD 1 */}
+        <div className="platform-grid">
 
           <div className="platform-card">
-
-            <div className="platform-icon">
+            <div className="card-icon">
               ◉
-            </div>
-
-            <div className="platform-step">
-              01
             </div>
 
             <h3>
@@ -145,239 +168,227 @@ function Home() {
             </h3>
 
             <p>
-              Collect machine sensor information such as
-              temperature, vibration and motor health.
+              Continuously monitor critical machine
+              parameters and equipment health.
             </p>
-
-            <div className="card-line"></div>
-
-            <div className="card-status">
-              ● SENSOR ACTIVE
-            </div>
-
           </div>
 
-
-          {/* CARD 2 */}
-
           <div className="platform-card">
-
-            <div className="platform-icon">
+            <div className="card-icon">
               ◈
             </div>
 
-            <div className="platform-step">
+            <h3>
+              Predictive Maintenance
+            </h3>
+
+            <p>
+              Detect early warning signs and predict
+              potential equipment failures.
+            </p>
+          </div>
+
+          <div className="platform-card">
+            <div className="card-icon">
+              ◇
+            </div>
+
+            <h3>
+              AI Decision Support
+            </h3>
+
+            <p>
+              Convert industrial data into actionable
+              maintenance recommendations.
+            </p>
+          </div>
+
+        </div>
+
+      </section>
+
+      {/* ================= TECHNOLOGY SECTION ================= */}
+      <section
+        id="technology"
+        className="technology-section"
+      >
+
+        <div className="section-heading">
+
+          <div className="hero-label">
+            ADVANCED TECHNOLOGY
+          </div>
+
+          <h2>
+            Powered by
+            <span> Industrial AI</span>
+          </h2>
+
+          <p>
+            SystemSmartPredict combines machine learning,
+            sensor analytics, predictive models, and
+            intelligent visualization.
+          </p>
+
+        </div>
+
+        <div className="technology-grid">
+
+          <div className="technology-card">
+            <h3>
+              Machine Learning
+            </h3>
+
+            <p>
+              AI models analyze machine behavior and
+              identify patterns associated with failures.
+            </p>
+          </div>
+
+          <div className="technology-card">
+            <h3>
+              Sensor Analytics
+            </h3>
+
+            <p>
+              Temperature, vibration, pressure, RPM,
+              torque, and tool-wear data are continuously analyzed.
+            </p>
+          </div>
+
+          <div className="technology-card">
+            <h3>
+              Intelligent Predictions
+            </h3>
+
+            <p>
+              Predict machine health and provide
+              early warnings before critical failures occur.
+            </p>
+          </div>
+
+        </div>
+
+      </section>
+
+      {/* ================= TEAM SECTION ================= */}
+      <section
+        id="team"
+        className="team-section"
+      >
+
+        <div className="section-heading">
+
+          <div className="hero-label">
+            OUR TEAM
+          </div>
+
+          <h2>
+            Building the
+            <span> Future of Maintenance</span>
+          </h2>
+
+          <p>
+            A collaborative engineering team developing
+            an intelligent industrial predictive maintenance platform.
+          </p>
+
+        </div>
+
+        <div className="team-grid">
+
+          <div className="team-card">
+            <div className="team-number">
+              01
+            </div>
+
+            <h3>
+              Frontend & 3D Interface
+            </h3>
+
+            <p>
+              Interactive industrial interface,
+              3D visualization, and platform experience.
+            </p>
+          </div>
+
+          <div className="team-card">
+            <div className="team-number">
               02
             </div>
 
             <h3>
-              AI Analysis
+              Authentication
             </h3>
 
             <p>
-              Analyze machine data and identify unusual
-              patterns or changes in equipment behavior.
+              Login, registration, profile management,
+              and protected application routes.
             </p>
-
-            <div className="card-line"></div>
-
-            <div className="card-status">
-              ● AI ANALYZING
-            </div>
-
           </div>
 
-
-          {/* CARD 3 */}
-
-          <div className="platform-card">
-
-            <div className="platform-icon">
-              ◇
-            </div>
-
-            <div className="platform-step">
+          <div className="team-card">
+            <div className="team-number">
               03
             </div>
 
             <h3>
-              Failure Prediction
+              Dashboard & Monitoring
             </h3>
 
             <p>
-              Predict potential equipment failures before
-              they become serious maintenance problems.
+              Machine health monitoring, sensor analytics,
+              and real-time dashboard functionality.
             </p>
-
-            <div className="card-line"></div>
-
-            <div className="card-status">
-              ● PREDICTION READY
-            </div>
-
           </div>
 
-
-          {/* CARD 4 */}
-
-          <div className="platform-card">
-
-            <div className="platform-icon">
-              ✓
-            </div>
-
-            <div className="platform-step">
+          <div className="team-card">
+            <div className="team-number">
               04
             </div>
 
             <h3>
-              Preventive Action
+              Analytics & Prediction
             </h3>
 
             <p>
-              Provide maintenance alerts and decision support
-              so teams can take action at the right time.
+              Predictive analytics, machine learning,
+              and intelligent failure prediction.
             </p>
-
-            <div className="card-line"></div>
-
-            <div className="card-status">
-              ● SYSTEM PROTECTED
-            </div>
-
-          </div>
-
-        </div>
-
-
-        {/* CURRENT SYSTEM STATUS */}
-
-        <div className="platform-monitor">
-
-          <div>
-
-            <div className="monitor-label">
-              CURRENT SYSTEM STATUS
-            </div>
-
-            <h3>
-              Industrial Equipment
-            </h3>
-
-            <p>
-              All monitored systems are operating normally.
-            </p>
-
-          </div>
-
-
-          <div className="monitor-stats">
-
-            <div className="monitor-stat">
-
-              <strong>
-                98%
-              </strong>
-
-              <span>
-                Machine Health
-              </span>
-
-            </div>
-
-
-            <div className="monitor-stat">
-
-              <strong>
-                72°C
-              </strong>
-
-              <span>
-                Temperature
-              </span>
-
-            </div>
-
-
-            <div className="monitor-stat">
-
-              <strong>
-                1.8
-              </strong>
-
-              <span>
-                Vibration mm/s
-              </span>
-
-            </div>
-
-
-            <div className="monitor-stat healthy">
-
-              <strong>
-                ✓
-              </strong>
-
-              <span>
-                System Healthy
-              </span>
-
-            </div>
-
           </div>
 
         </div>
 
       </section>
 
+      {/* ================= FOOTER ================= */}
+      <footer className="footer">
 
-      {/* TECHNOLOGY SECTION */}
-
-      <section
-        className="technology-section"
-        id="technology"
-      >
-
-        <div className="section-label">
-          TECHNOLOGY
+        <div className="logo">
+          SYSTEM<span>SMART</span>PREDICT
         </div>
-
-        <h2>
-          Intelligent Monitoring.
-        </h2>
 
         <p>
-          Sensor data + AI analysis + predictive intelligence
-          working together to reduce unexpected machine failure.
+          Intelligent Predictive Maintenance Platform
         </p>
 
-      </section>
+        <div className="footer-auth">
 
+          <Link to="/login">
+            Login
+          </Link>
 
-      {/* TEAM SECTION */}
+          <Link to="/register">
+            Create Account
+          </Link>
 
-      <section
-        className="team-section"
-        id="team"
-      >
-
-        <div className="section-label">
-          SYSTEMSMARTPREDICT
         </div>
 
-        <h2>
-          Built for Industrial Intelligence.
-        </h2>
-
-        <p>
-          A smart platform designed to support predictive
-          maintenance and industrial decision making.
-        </p>
-
-      </section>
+      </footer>
 
     </div>
   );
 }
 
 export default Home;
+
