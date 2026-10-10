@@ -1,0 +1,393 @@
+/* =====================================
+   SmartPredict Dashboard
+   Dashboard & Monitoring
+   ===================================== */
+
+
+/* =========================
+   General
+   ========================= */
+
+* {
+    box-sizing: border-box;
+}
+
+
+body {
+
+    margin: 0;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    background: #f1f5f9;
+
+    color: #102a43;
+}
+
+
+
+/* =========================
+   Header
+   ========================= */
+
+header {
+
+    background: #ffffff;
+
+    padding: 30px 50px;
+
+    border-bottom: 1px solid #e2e8f0;
+
+}
+
+
+header h1 {
+
+    margin: 0;
+
+    font-size: 32px;
+
+}
+
+
+header p {
+
+    margin-top: 8px;
+
+    color: #64748b;
+
+    font-size: 16px;
+
+}
+
+
+
+/* =========================
+   Main
+   ========================= */
+
+main {
+
+    max-width: 1450px;
+
+    margin: auto;
+
+    padding: 35px 25px;
+
+}
+
+
+
+/* =========================
+   Section
+   ========================= */
+
+section {
+
+    margin-bottom: 35px;
+
+}
+
+
+h2 {
+
+    font-size: 30px;
+
+    margin-bottom: 20px;
+
+}
+
+
+
+/* =========================
+   Machine Selection
+   ========================= */
+
+.machine-selection {
+
+    background: white;
+
+    padding: 25px;
+
+    border-radius: 15px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 25px;
+
+    box-shadow:
+        0 5px 15px rgba(0, 0, 0, 0.05);
+
+}
+
+
+.machine-selection label {
+
+    font-size: 20px;
+
+}
+
+
+.machine-selection select {
+
+    padding: 12px 20px;
+
+    font-size: 16px;
+
+    border: 1px solid #cbd5e1;
+
+    border-radius: 10px;
+
+    background: white;
+
+    cursor: pointer;
+
+}
+
+
+
+/* =========================
+   Health Card
+   ========================= */
+
+.health-card {
+
+    background: white;
+
+    padding: 35px;
+
+    border-radius: 15px;
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    box-shadow:
+        0 5px 15px rgba(0, 0, 0, 0.05);
+
+}
+
+
+.health-card h3 {
+
+    margin: 0 0 10px 0;
+
+    font-size: 24px;
+
+}
+
+
+.status {
+
+    margin: 0;
+
+    font-size: 20px;
+
+    font-weight: bold;
+
+}
+
+
+.status.healthy {
+
+    color: #16a34a;
+
+}
+
+
+.status.warning {
+
+    color: #f59e0b;
+
+}
+
+
+.status.critical {
+
+    color: #dc2626;
+
+}
+
+
+.health-value {
+
+    font-size: 58px;
+
+    font-weight: bold;
+
+}
+
+
+
+/* =========================
+   Sensor Grid
+   ========================= */
+
+.sensor-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, 1fr);
+
+    gap: 25px;
+
+}
+
+
+.sensor-card {
+
+    background: white;
+
+    padding: 30px;
+
+    border-radius: 15px;
+
+    box-shadow:
+        0 5px 15px rgba(0, 0, 0, 0.05);
+
+}
+
+
+.sensor-card h3 {
+
+    margin: 0;
+
+    font-size: 20px;
+
+}
+
+
+.sensor-value {
+
+    font-size: 32px;
+
+    font-weight: bold;
+
+    margin: 25px 0 10px 0;
+
+}
+
+
+.sensor-card span {
+
+    color: #94a3b8;
+
+}
+
+
+
+/* =========================
+   Chart
+   ========================= */
+
+.chart-container {
+
+    background: white;
+
+    padding: 25px;
+
+    border-radius: 15px;
+
+    height: 420px;
+
+    box-shadow:
+        0 5px 15px rgba(0, 0, 0, 0.05);
+
+}
+
+
+
+/* =========================
+   Alerts
+   ========================= */
+
+.alert-box {
+
+    background: white;
+
+    padding: 25px;
+
+    border-radius: 12px;
+
+    border-left:
+        7px solid #16a34a;
+
+    box-shadow:
+        0 5px 15px rgba(0, 0, 0, 0.05);
+
+}
+
+
+.alert-box h3 {
+
+    margin: 0 0 10px 0;
+
+    font-size: 22px;
+
+}
+
+
+.alert-box p {
+
+    margin: 0;
+
+    font-size: 17px;
+
+    color: #64748b;
+
+}
+
+
+
+/* =========================
+   Responsive Design
+   ========================= */
+
+@media (max-width: 900px) {
+
+    .sensor-grid {
+
+        grid-template-columns:
+            repeat(2, 1fr);
+
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    .sensor-grid {
+
+        grid-template-columns:
+            1fr;
+
+    }
+
+    .health-card {
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        gap: 20px;
+
+    }
+
+    .machine-selection {
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+    }
+
+}

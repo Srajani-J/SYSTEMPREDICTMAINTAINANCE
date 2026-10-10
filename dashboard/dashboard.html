@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SmartPredict - Dashboard</title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="dashboard.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+
+<body>
+
+    <!-- =========================
+         Header
+         ========================= -->
+
+    <header>
+
+        <h1>SmartPredict</h1>
+
+        <p>
+            Explainable AI-Powered Predictive Maintenance
+            and Industrial Decision Support System
+        </p>
+
+    </header>
+
+
+    <!-- =========================
+         Main Container
+         ========================= -->
+
+    <main>
+
+
+        <!-- =========================
+             Machine Selection
+             ========================= -->
+
+        <section class="machine-selection">
+
+            <label for="machineSelect">
+                Select Machine:
+            </label>
+
+            <select id="machineSelect">
+
+                <option value="Machine 01">
+                    Machine 01
+                </option>
+
+                <option value="Machine 02">
+                    Machine 02
+                </option>
+
+                <option value="Machine 03">
+                    Machine 03
+                </option>
+
+            </select>
+
+        </section>
+
+
+
+        <!-- =========================
+             Machine Health
+             ========================= -->
+
+        <section>
+
+            <h2>Machine Health</h2>
+
+            <div class="health-card">
+
+                <div>
+
+                    <h3 id="machineName">
+                        Machine 01
+                    </h3>
+
+                    <p id="machineStatus"
+                       class="status healthy">
+                        HEALTHY
+                    </p>
+
+                </div>
+
+
+                <div>
+
+                    <span id="healthValue"
+                          class="health-value">
+                        94%
+                    </span>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =========================
+             Live Sensor Values
+             ========================= -->
+
+        <section>
+
+            <h2>Live Sensor Values</h2>
+
+            <div class="sensor-grid">
+
+
+                <!-- Temperature -->
+
+                <div class="sensor-card">
+
+                    <h3>
+                        🌡️ Temperature
+                    </h3>
+
+                    <p id="temperature"
+                       class="sensor-value">
+                        72.4 °C
+                    </p>
+
+                    <span>
+                        Machine temperature
+                    </span>
+
+                </div>
+
+
+
+                <!-- Vibration -->
+
+                <div class="sensor-card">
+
+                    <h3>
+                        〰️ Vibration
+                    </h3>
+
+                    <p id="vibration"
+                       class="sensor-value">
+                        3.2 mm/s
+                    </p>
+
+                    <span>
+                        Vibration level
+                    </span>
+
+                </div>
+
+
+
+                <!-- Pressure -->
+
+                <div class="sensor-card">
+
+                    <h3>
+                        💧 Pressure
+                    </h3>
+
+                    <p id="pressure"
+                       class="sensor-value">
+                        6.8 bar
+                    </p>
+
+                    <span>
+                        Operating pressure
+                    </span>
+
+                </div>
+
+
+
+                <!-- RPM -->
+
+                <div class="sensor-card">
+
+                    <h3>
+                        ⚙️ RPM
+                    </h3>
+
+                    <p id="rpm"
+                       class="sensor-value">
+                        1450 RPM
+                    </p>
+
+                    <span>
+                        Motor speed
+                    </span>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =========================
+             Sensor Trend
+             ========================= -->
+
+        <section>
+
+            <h2>Sensor Trend</h2>
+
+            <div class="chart-container">
+
+                <canvas id="sensorChart"></canvas>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =========================
+             Alerts & Notifications
+             ========================= -->
+
+        <section>
+
+            <h2>Alerts & Notifications</h2>
+
+            <div id="alertBox"
+                 class="alert-box">
+
+                <h3 id="alertTitle">
+                    System Normal
+                </h3>
+
+                <p id="alertMessage">
+                    Machine is operating normally.
+                </p>
+
+            </div>
+
+        </section>
+
+
+    </main>
+
+
+    <!-- JavaScript -->
+
+    <script src="dashboard.js"></script>
+
+</body>
+
+</html>
