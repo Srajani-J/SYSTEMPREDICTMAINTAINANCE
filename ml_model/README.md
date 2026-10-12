@@ -11,7 +11,22 @@ Target: Machine failure (0 = no failure, 1 = failure)
 Non-failure records: 9,661 (96.61%)
 Failure records: 339 (3.39%)
 
-The dataset is imbalanced. Missing values and duplicate counts should be confirmed using the dataset-cleaning report.
+Dataset quality checks
+
+Missing values: 0 across all 14 columns.
+Duplicate rows: 0.
+Failure rate: 3.39%, indicating a class-imbalanced dataset.
+Preprocessing: The model uses the cleaned AI4I 2020 dataset supplied in the project. Refer to the dataset-cleaning report for details of the cleaning operations performed.
+
+Input features used by the model
+
+Air temperature [K]
+Process temperature [K]
+Rotational speed [rpm]
+Torque [Nm]
+Tool wear [min]
+
+The original dataset also contains identifiers, product type, the machine-failure target, and failure-mode indicators. The model uses only the five sensor features listed above.
 
 3. Model
 Algorithm: Random Forest Classifier
