@@ -27,3 +27,6 @@ backend/__pycache__/
 
 __pycache__/
 *.py[cod]
+
+# Local ML model backups
+ml_model/failure_model_backup.joblib

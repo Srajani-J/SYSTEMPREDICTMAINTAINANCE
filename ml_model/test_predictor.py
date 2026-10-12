@@ -1,13 +1,13 @@
-
 from predictor import predict_machine
 
+# Test readings must use the five features from ai4i2020_cleaned.csv.
+# These are example values, not a real machine diagnosis.
 readings = {
-    "temperature": 80,
-    "vibration": 0.8,
-    "pressure": 100,
-    "speed": 1500,
-    "torque": 45,
-    "tool_wear": 150,
+    "Air temperature [K]": 300.0,
+    "Process temperature [K]": 310.0,
+    "Rotational speed [rpm]": 1500,
+    "Torque [Nm]": 40.0,
+    "Tool wear [min]": 100,
 }
 
 result = predict_machine(readings)
