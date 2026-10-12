@@ -1,52 +1,93 @@
-# SmartPredict — Machine Learning Module
+SmartPredict — Machine Learning Module
+1. Purpose
 
-## Purpose
-Predict machine failure from six sensor measurements and provide individual prediction explanations using SHAP.
+Predict machine failure using sensor measurements from the AI4I 2020 predictive maintenance dataset. The module also uses SHAP to explain individual predictions.
 
-## Model
-- Algorithm: Random Forest Classifier
-- Dataset: `sample_machine_data.csv`
-- Records: 1,000
-- Target: `failure` (0 = no failure, 1 = failure)
-- Features: `temperature`, `vibration`, `pressure`, `speed`, `torque`, `tool_wear`
-- Test split: 200 records
-- Reported test accuracy: 100%
-- Reported ROC-AUC: 1.000
+2. Dataset
+Dataset: Cleaned AI4I 2020 predictive maintenance dataset
+Records: 10,000
+Columns: 14
+Target: Machine failure (0 = no failure, 1 = failure)
+Non-failure records: 9,661 (96.61%)
+Failure records: 339 (3.39%)
 
-**Limitation:** These metrics are from the current synthetic dataset and test split. They do not establish real-world industrial performance.
+The dataset is imbalanced. Missing values and duplicate counts should be confirmed using the dataset-cleaning report.
 
-## Main files
-- `train_model.py` — trains and evaluates the model
-- `predict_failure.py` — interactive prediction demonstration
-- `explain_prediction.py` — SHAP explanation demonstration
-- `predictor.py` — reusable prediction function
-- `test_predictor.py` — tests the reusable function
-- `failure_model.joblib` — saved model and feature order
-- `feature_importance.csv` — global feature importance
+3. Model
+Algorithm: Random Forest Classifier
+Training records: 8,000
+Testing records: 2,000
+Split: 80% training and 20% testing
+Input features
+Air temperature [K]
+Process temperature [K]
+Rotational speed [rpm]
+Torque [Nm]
+Tool wear [min]
+4. Evaluation results
+Metric	Result
+Accuracy	97.5%
+Balanced accuracy	88.7%
+ROC-AUC	0.972
 
-## Backend integration
-Import the function:
+Confusion matrix (rows = actual, columns = predicted):
 
-`from predictor import predict_machine`
+[[1895, 37],
+ [  14, 54]]
 
-Call it with a dictionary containing all six required sensor readings:
 
-`result = predict_machine(sensor_readings)`
+The model detected 54 of 68 actual failures and missed 14. It also produced 37 false alarms. Failure-class precision was 0.59 and recall was 0.79.
 
-The returned dictionary includes:
-- `prediction`: 0 or 1
-- `status`: prediction status string
-- `failure_probability`: estimated probability between 0 and 1
-- `explanations`: sensor names, SHAP values and contribution directions
-- `model`: model name
-- `note`: explanation limitation
+5. Explainable AI
 
-## Dependencies
-Install the required packages with:
+The reusable predictor uses SHAP TreeExplainer to calculate feature contributions.
 
-`python -m pip install pandas scikit-learn joblib shap`
+Each explanation includes:
 
-## Important notes
-- Supply all six features as numeric values.
-- SHAP contributions explain the model output, not real-world causation.
-- The current model does not validate physical sensor limits or establish a production-ready maintenance risk policy.
+sensor: feature name
+shap_value: numerical contribution
+direction: toward_failure, away_from_failure, or neutral
+
+SHAP explains model output; it does not prove real-world causation.
+
+6. Main files
+train_model.py — trains and evaluates the model
+predictor.py — reusable prediction and explanation function
+test_predictor.py — tests the reusable predictor
+predict_failure.py — prediction demonstration
+explain_prediction.py — explanation demonstration
+failure_model.joblib — saved model and feature configuration
+feature_importance.csv — global feature importance
+failure_model_backup.joblib — backup model
+7. Using the predictor
+
+Run this example from the project root:
+
+from ml_model.predictor import predict_machine
+
+sensor_readings = {
+    "Air temperature [K]": 300.0,
+    "Process temperature [K]": 310.0,
+    "Rotational speed [rpm]": 1500,
+    "Torque [Nm]": 40.0,
+    "Tool wear [min]": 100
+}
+
+result = predict_machine(sensor_readings)
+print(result)
+
+
+The returned dictionary includes the predicted class, status, estimated failure probability, model name, SHAP explanations and a limitation note.
+
+8. Dependencies
+
+Install the required packages in your Python environment:
+
+python -m pip install pandas scikit-learn joblib shap
+
+9. Limitations
+Accuracy alone is insufficient for evaluating an imbalanced dataset.
+The model missed 14 actual failures in the reported test set.
+Real-world industrial performance has not been established.
+SHAP contributions are not proof of causation.
+Further validation is needed before using predictions for real maintenance decisions.
