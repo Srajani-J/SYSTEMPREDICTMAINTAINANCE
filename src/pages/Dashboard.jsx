@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+
+import { useEffect, useMemo, useState } from "react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -8,9 +9,11 @@ import {
   Title,
   Tooltip,
   Legend,
+  Filler,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 import ThreeDScene from "../components/ThreeDScene";
+import NotificationPanel from "../components/NotificationPanel";
 
 ChartJS.register(
   CategoryScale,
@@ -19,143 +22,191 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler
 );
 
 const API_URL = "http://127.0.0.1:8000";
+const PAGE_SIZE = 1000;
+
+const EMPTY_INPUTS = {
+  air_temperature: "",
+  process_temperature: "",
+  rotational_speed: "",
+  torque: "",
+  tool_wear: "",
+};
 
 function Dashboard() {
   const [machines, setMachines] = useState([]);
   const [selectedMachineId, setSelectedMachineId] = useState("");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [lastUpdated, setLastUpdated] = useState("");
 
-  // Fetch machine data from the FastAPI backend.
-  async function fetchMachineData() {
+  const [predictionInputs, setPredictionInputs] =
+    useState(EMPTY_INPUTS);
+
+  const [prediction, setPrediction] = useState(null);
+  const [predictionLoading, setPredictionLoading] =
+    useState(false);
+  const [predictionError, setPredictionError] = useState("");
+
+  // Refresh notification panel after a new prediction.
+  const [notificationRefreshKey, setNotificationRefreshKey] =
+    useState(0);
+
+  // ------------------------------------------
+  // LOAD OPERATING PROFILE DATA
+  // ------------------------------------------
+
+  async function fetchMachineData(isRefresh = false) {
     try {
-      const response = await fetch(`${API_URL}/api/health`);
+      setError("");
 
-      if (!response.ok) {
-        throw new Error(`API returned ${response.status}`);
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
       }
 
-      const data = await response.json();
+      const firstResponse = await fetch(
+        `${API_URL}/api/health?limit=${PAGE_SIZE}&offset=0`
+      );
 
-      if (!Array.isArray(data.machines)) {
-        throw new Error("Invalid machine data received from API");
+      if (!firstResponse.ok) {
+        throw new Error(`Backend error: ${firstResponse.status}`);
       }
 
-      setMachines(data.machines);
+      const firstPage = await firstResponse.json();
 
-      // Preserve the selected machine during automatic refresh.
-      setSelectedMachineId((currentId) => {
+      if (!Array.isArray(firstPage.machines)) {
+        throw new Error("Invalid operating profile response");
+      }
+
+      const total = firstPage.total_count;
+      const pageCount = Math.ceil(total / PAGE_SIZE);
+
+      const remainingPages = await Promise.all(
+        Array.from(
+          { length: Math.max(0, pageCount - 1) },
+          async (_, index) => {
+            const offset = (index + 1) * PAGE_SIZE;
+
+            const response = await fetch(
+              `${API_URL}/api/health?limit=${PAGE_SIZE}&offset=${offset}`
+            );
+
+            if (!response.ok) {
+              throw new Error(
+                "Unable to retrieve operating profile information"
+              );
+            }
+
+            const data = await response.json();
+
+            if (!Array.isArray(data.machines)) {
+              throw new Error("Invalid operating profile response");
+            }
+
+            return data.machines;
+          }
+        )
+      );
+
+      const allMachines = [
+        ...firstPage.machines,
+        ...remainingPages.flat(),
+      ];
+
+      setMachines(allMachines);
+
+      setSelectedMachineId((current) => {
         if (
-          currentId &&
-          data.machines.some(
-            (machine) => machine.machine_id === currentId
-          )
+          current &&
+          allMachines.some((item) => item.machine_id === current)
         ) {
-          return currentId;
+          return current;
         }
 
-        return data.machines[0]?.machine_id ?? "";
+        return allMachines[0]?.machine_id ?? "";
       });
 
       setLastUpdated(new Date().toLocaleTimeString());
-      setError("");
     } catch (err) {
-      console.error("SmartPredict API Error:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Unable to connect to the SmartPredict API"
-      );
+      console.error("Dashboard connection error:", err);
+      setError(err.message || "Unable to connect to backend");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }
 
-  // Load data initially and refresh every 10 seconds.
   useEffect(() => {
     fetchMachineData();
-
-    const intervalId = setInterval(() => {
-      fetchMachineData();
-    }, 10000);
-
-    return () => clearInterval(intervalId);
   }, []);
 
-  // Find the currently selected machine.
-  const selectedMachine =
-    machines.find(
-      (machine) => machine.machine_id === selectedMachineId
-    ) ?? machines[0] ?? null;
+  // ------------------------------------------
+  // SELECTED OPERATING PROFILE
+  // ------------------------------------------
 
-  // Determine the CSS class for a machine status.
-  const getStatusClass = (status) => {
-    if (status === "HEALTHY") return "healthy";
-    if (status === "WARNING") return "warning";
-    return "critical";
-  };
+  const selectedMachine = useMemo(
+    () =>
+      machines.find(
+        (item) => item.machine_id === selectedMachineId
+      ) ?? machines[0] ?? null,
+    [machines, selectedMachineId]
+  );
 
-  // Loading screen.
-  if (loading) {
-    return (
-      <div className="dashboard-page">
-        <h1>SmartPredict Dashboard</h1>
-        <p>Loading machine data from SmartPredict API...</p>
-      </div>
-    );
-  }
+  // Set prediction defaults from the selected dataset profile.
+  useEffect(() => {
+    if (!selectedMachine) return;
 
-  // Connection error screen.
-  if (error && machines.length === 0) {
-    return (
-      <div className="dashboard-page">
-        <h1>SmartPredict Dashboard</h1>
+    setPredictionInputs({
+      air_temperature: String(
+        selectedMachine.temperature_k ?? ""
+      ),
+      process_temperature: String(
+        selectedMachine.process_temperature_k ?? ""
+      ),
+      rotational_speed: String(
+        selectedMachine.rpm ?? selectedMachine.speed ?? ""
+      ),
+      torque: String(selectedMachine.torque ?? ""),
+      tool_wear: String(selectedMachine.tool_wear ?? ""),
+    });
 
-        <div className="alert-box critical">
-          <h3>Backend Connection Error</h3>
+    setPrediction(null);
+    setPredictionError("");
+  }, [selectedMachine]);
 
-          <p>
-            Unable to load machine data from the SmartPredict API.
-          </p>
+  // ------------------------------------------
+  // OPERATING SPEED CHART
+  // ------------------------------------------
 
-          <p>
-            <strong>Error:</strong> {error}
-          </p>
-
-          <p>Make sure your FastAPI backend is running at:</p>
-
-          <strong>http://127.0.0.1:8000</strong>
-
-          <br />
-          <br />
-
-          <button onClick={fetchMachineData}>
-            Retry Connection
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Prepare health chart data.
-  const chartMachines = machines.slice(0, 10);
+  const chartRecords = useMemo(
+    () => machines.slice(0, 20),
+    [machines]
+  );
 
   const chartData = {
-    labels: chartMachines.map((machine) => machine.machine_id),
-
+    labels: chartRecords.map((item) => item.machine_id),
     datasets: [
       {
-        label: "Machine Health (%)",
-        data: chartMachines.map((machine) => machine.health),
-        tension: 0.3,
+        label: "Rotational Speed",
+        data: chartRecords.map(
+          (item) => item.rpm ?? item.speed ?? null
+        ),
+        borderColor: "#16c8ff",
+        backgroundColor: "rgba(22, 200, 255, 0.12)",
+        pointBackgroundColor: "#16c8ff",
+        pointBorderColor: "#ffffff",
+        pointRadius: 3,
+        pointHoverRadius: 6,
         borderWidth: 2,
-        pointRadius: 4,
-        fill: false,
+        tension: 0.38,
+        fill: true,
       },
     ],
   };
@@ -165,80 +216,229 @@ function Dashboard() {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        display: true,
+        labels: {
+          color: "#d8e7f5",
+        },
       },
-      title: {
-        display: false,
+      tooltip: {
+        mode: "index",
+        intersect: false,
       },
     },
     scales: {
-      y: {
-        min: 0,
-        max: 100,
+      x: {
+        ticks: {
+          color: "#91a9c0",
+          maxRotation: 45,
+          minRotation: 0,
+        },
+        grid: {
+          color: "rgba(150, 190, 220, 0.08)",
+        },
         title: {
           display: true,
-          text: "Health (%)",
+          text: "Operating Profile",
+          color: "#a9bfd2",
         },
       },
-      x: {
+      y: {
+        ticks: {
+          color: "#91a9c0",
+        },
+        grid: {
+          color: "rgba(150, 190, 220, 0.08)",
+        },
         title: {
           display: true,
-          text: "Machine ID",
+          text: "RPM",
+          color: "#a9bfd2",
         },
       },
     },
   };
 
-  // Calculate system-wide statistics.
-  const healthyCount = machines.filter(
-    (machine) => machine.status === "HEALTHY"
-  ).length;
+  // ------------------------------------------
+  // PREDICTION INPUTS
+  // ------------------------------------------
 
-  const warningCount = machines.filter(
-    (machine) => machine.status === "WARNING"
-  ).length;
+  function handlePredictionInput(event) {
+    const { name, value } = event.target;
 
-  const criticalCount = machines.filter(
-    (machine) => machine.status === "CRITICAL"
-  ).length;
+    setPredictionInputs((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
+  }
+
+  // ------------------------------------------
+  // RANDOM FOREST + SHAP + NOTIFICATIONS
+  // ------------------------------------------
+
+  async function handlePrediction(event) {
+    event.preventDefault();
+
+    setPrediction(null);
+    setPredictionError("");
+
+    const numericInputs = Object.fromEntries(
+      Object.entries(predictionInputs).map(([key, value]) => [
+        key,
+        Number(value),
+      ])
+    );
+
+    const hasEmptyInput = Object.values(predictionInputs).some(
+      (value) => value.trim() === ""
+    );
+
+    const hasInvalidInput = Object.values(numericInputs).some(
+      (value) => !Number.isFinite(value)
+    );
+
+    if (hasEmptyInput || hasInvalidInput) {
+      setPredictionError(
+        "Please enter valid values for all five operating parameters."
+      );
+      return;
+    }
+
+    if (
+      numericInputs.air_temperature <= 0 ||
+      numericInputs.process_temperature <= 0 ||
+      numericInputs.rotational_speed <= 0 ||
+      numericInputs.torque < 0 ||
+      numericInputs.tool_wear < 0
+    ) {
+      setPredictionError(
+        "Enter positive temperatures and RPM, and non-negative torque and tool wear."
+      );
+      return;
+    }
+
+    setPredictionLoading(true);
+
+    try {
+      const response = await fetch(`${API_URL}/api/predict`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...numericInputs,
+          profile_id: selectedMachine?.machine_id,
+          product_id: selectedMachine?.product_id,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          typeof data.detail === "string"
+            ? data.detail
+            : "Prediction failed"
+        );
+      }
+
+      setPrediction(data);
+
+      // Reload notifications after prediction.
+      setNotificationRefreshKey((previous) => previous + 1);
+    } catch (err) {
+      console.error("Prediction error:", err);
+      setPredictionError(
+        err.message || "Unable to generate prediction"
+      );
+    } finally {
+      setPredictionLoading(false);
+    }
+  }
+
+  // ------------------------------------------
+  // LOADING
+  // ------------------------------------------
+
+  if (loading) {
+    return (
+      <div className="dashboard-page">
+        <div className="dashboard-section">
+          <h1>SmartPredict</h1>
+          <p>Initializing operating profile monitoring...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ------------------------------------------
+  // CONNECTION ERROR
+  // ------------------------------------------
+
+  if (error && machines.length === 0) {
+    return (
+      <div className="dashboard-page">
+        <div className="dashboard-section">
+          <h1>SmartPredict</h1>
+
+          <div className="alert-box critical">
+            <h3>Backend Connection Error</h3>
+            <p>{error}</p>
+
+            <button onClick={() => fetchMachineData()}>
+              Retry Connection
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const failureRecorded = selectedMachine?.failure === 1;
+
+  const machineCondition = !selectedMachine
+    ? "UNAVAILABLE"
+    : failureRecorded
+      ? "ATTENTION REQUIRED"
+      : "NO FAILURE RECORDED";
+
+  // ------------------------------------------
+  // MAIN DASHBOARD
+  // ------------------------------------------
 
   return (
     <div className="dashboard-page">
+
       {/* HEADER */}
-      <div className="dashboard-header">
+
+      <header className="dashboard-header">
         <div>
-          <h1>SmartPredict Dashboard</h1>
+          <h1>SmartPredict</h1>
+          <p>Industrial Intelligence & Predictive Maintenance</p>
 
           <p>
-            Real-Time Predictive Maintenance Monitoring
+            <strong>System Status:</strong>{" "}
+            <span className="status healthy">CONNECTED</span>
           </p>
 
           <p>
-            <strong>Backend:</strong>{" "}
-            <span className="status healthy">
-              Connected
-            </span>
+            <strong>AI Engine:</strong>{" "}
+            <span className="status healthy">READY</span>
           </p>
 
           <p>
-            <strong>API:</strong> /api/health
-          </p>
-
-          <p>
-            <strong>Last Updated:</strong> {lastUpdated}
+            <strong>Last Sync:</strong>{" "}
+            {lastUpdated || "--"}
           </p>
 
           {error && (
             <p role="status">
-              <strong>Refresh warning:</strong> {error}. Showing
-              the most recently loaded data.
+              <strong>Connection warning:</strong> {error}
             </p>
           )}
         </div>
 
-        <div>
+        <div className="machine-selector">
           <label htmlFor="machine-select">
-            <strong>Select Machine:</strong>
+            <strong>Select Operating Profile</strong>
           </label>
 
           <br />
@@ -263,272 +463,409 @@ function Dashboard() {
           <br />
           <br />
 
-          <button onClick={fetchMachineData}>
-            Refresh Data
+          <button
+            onClick={() => fetchMachineData(true)}
+            disabled={refreshing}
+          >
+            {refreshing ? "Refreshing..." : "Refresh Monitoring"}
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* SYSTEM OVERVIEW */}
-      <section className="dashboard-section">
-        <h2>System Overview</h2>
+      {/* NOTIFICATION PANEL */}
 
-        <div className="dashboard-cards">
-          <div className="dashboard-card">
-            <h3>Total Machines</h3>
-            <div className="dashboard-value">
-              {machines.length}
-            </div>
-          </div>
+      <NotificationPanel refreshKey={notificationRefreshKey} />
 
-          <div className="dashboard-card">
-            <h3>Healthy Machines</h3>
-            <div className="dashboard-value">
-              {healthyCount}
-            </div>
-            <span className="status healthy">HEALTHY</span>
-          </div>
+      {/* DASHBOARD CONTENT */}
 
-          <div className="dashboard-card">
-            <h3>Warning Machines</h3>
-            <div className="dashboard-value">
-              {warningCount}
-            </div>
-            <span className="status warning">WARNING</span>
-          </div>
-
-          <div className="dashboard-card">
-            <h3>Critical Machines</h3>
-            <div className="dashboard-value">
-              {criticalCount}
-            </div>
-            <span className="status critical">CRITICAL</span>
-          </div>
-        </div>
-      </section>
-
-      {/* SELECTED MACHINE OVERVIEW */}
       {selectedMachine && (
-        <section className="dashboard-section">
-          <h2>Machine: {selectedMachine.machine_id}</h2>
+        <>
+          {/* TOP STATUS */}
 
-          <div className="dashboard-cards">
-            <div className="dashboard-card">
-              <h3>Machine Health</h3>
+          <section className="dashboard-section">
+            <div className="dashboard-cards">
 
-              <div className="dashboard-value">
-                {selectedMachine.health}%
+              <div className="dashboard-card">
+                <h3>Selected Operating Profile</h3>
+                <div className="dashboard-value">
+                  {selectedMachine.machine_id}
+                </div>
+                <span className="status healthy">
+                  PROFILE ACTIVE
+                </span>
               </div>
 
-              <span
-                className={`status ${getStatusClass(
-                  selectedMachine.status
-                )}`}
-              >
-                {selectedMachine.status}
-              </span>
-            </div>
-
-            <div className="dashboard-card">
-              <h3>Temperature</h3>
-
-              <div className="dashboard-value">
-                {selectedMachine.temperature} °C
+              <div className="dashboard-card">
+                <h3>Historical Condition</h3>
+                <div className="dashboard-value">
+                  {failureRecorded ? "ATTENTION" : "NORMAL"}
+                </div>
+                <span
+                  className={`status ${
+                    failureRecorded ? "critical" : "healthy"
+                  }`}
+                >
+                  {machineCondition}
+                </span>
               </div>
-            </div>
 
-            <div className="dashboard-card">
-              <h3>Vibration</h3>
-
-              <div className="dashboard-value">
-                {selectedMachine.vibration} mm/s
+              <div className="dashboard-card">
+                <h3>Product ID</h3>
+                <div className="dashboard-value">
+                  {selectedMachine.product_id}
+                </div>
+                <span className="status healthy">
+                  TYPE {selectedMachine.product_type}
+                </span>
               </div>
-            </div>
-          </div>
-        </section>
-      )}
 
-      {/* SENSOR MONITORING */}
-      {selectedMachine && (
-        <section className="dashboard-section">
-          <h2>Sensor Monitoring</h2>
-
-          <div className="sensor-grid">
-            <div className="sensor-card">
-              <h3>Temperature</h3>
-              <div className="sensor-value">
-                {selectedMachine.temperature} °C
+              <div className="dashboard-card">
+                <h3>AI Prediction Engine</h3>
+                <div className="dashboard-value">
+                  READY
+                </div>
+                <span className="status healthy">
+                  RANDOM FOREST
+                </span>
               </div>
+
             </div>
+          </section>
 
-            <div className="sensor-card">
-              <h3>Vibration</h3>
-              <div className="sensor-value">
-                {selectedMachine.vibration} mm/s
-              </div>
-            </div>
+          {/* SENSOR MONITORING */}
 
-            <div className="sensor-card">
-              <h3>Pressure</h3>
-              <div className="sensor-value">
-                {selectedMachine.pressure}
-              </div>
-            </div>
-
-            <div className="sensor-card">
-              <h3>RPM</h3>
-              <div className="sensor-value">
-                {selectedMachine.rpm ?? selectedMachine.speed ?? "--"}
-              </div>
-            </div>
-
-            <div className="sensor-card">
-              <h3>Torque</h3>
-              <div className="sensor-value">
-                {selectedMachine.torque}
-              </div>
-            </div>
-
-            <div className="sensor-card">
-              <h3>Tool Wear</h3>
-              <div className="sensor-value">
-                {selectedMachine.tool_wear}
-              </div>
-            </div>
-
-            <div className="sensor-card">
-              <h3>Failure Prediction</h3>
-              <div className="sensor-value">
-                {selectedMachine.failure === 1 ? "YES" : "NO"}
-              </div>
-            </div>
-
-            <div className="sensor-card">
-              <h3>Status</h3>
-              <div
-                className={`status ${getStatusClass(
-                  selectedMachine.status
-                )}`}
-              >
-                {selectedMachine.status}
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* MACHINE HEALTH CHART */}
-      <section className="dashboard-section">
-        <h2>Machine Health Overview</h2>
-
-        <div className="chart-container">
-          <Line data={chartData} options={chartOptions} />
-        </div>
-      </section>
-
-      {/* MACHINE ALERT */}
-      {selectedMachine && (
-        <section className="dashboard-section">
-          <h2>Machine Alert</h2>
-
-          <div
-            className={`alert-box ${getStatusClass(
-              selectedMachine.status
-            )}`}
-          >
-            <h3>
-              {selectedMachine.status === "HEALTHY"
-                ? "Machine Operating Normally"
-                : selectedMachine.status === "WARNING"
-                ? "Maintenance Attention Required"
-                : "Critical Machine Condition"}
-            </h3>
+          <section className="dashboard-section">
+            <h2>Operating Parameter Monitoring</h2>
 
             <p>
-              Machine <strong>{selectedMachine.machine_id}</strong>{" "}
-              currently has a health score of{" "}
-              <strong>{selectedMachine.health}%</strong>.
-            </p>
-
-            <p>
-              Failure indicator:{" "}
-              <strong>
-                {selectedMachine.failure === 1 ? "YES" : "NO"}
-              </strong>
-            </p>
-          </div>
-        </section>
-      )}
-
-      {/* 3D MACHINE VISUALIZATION */}
-      <section className="dashboard-section">
-        <h2>
-          3D Machine Visualization
-          {selectedMachine
-            ? ` — ${selectedMachine.machine_id}`
-            : ""}
-        </h2>
-
-        <div className="machine-view">
-          {/* Pass the selected API machine into the 3D component. */}
-          <ThreeDScene machine={selectedMachine} />
-        </div>
-      </section>
-
-      {/* MACHINE INFORMATION */}
-      {selectedMachine && (
-        <section className="dashboard-section">
-          <h2>Machine Information</h2>
-
-          <div className="machine-info">
-            <p>
-              <strong>Machine ID:</strong>{" "}
+              Historical dataset readings for{" "}
               {selectedMachine.machine_id}
             </p>
 
+            <div className="sensor-grid">
+
+              <div className="sensor-card">
+                <h3>Air Temperature</h3>
+                <div className="sensor-value">
+                  {selectedMachine.temperature ?? "--"} °C
+                </div>
+                <p>
+                  {selectedMachine.temperature_k ?? "--"} K
+                </p>
+              </div>
+
+              <div className="sensor-card">
+                <h3>Process Temperature</h3>
+                <div className="sensor-value">
+                  {selectedMachine.process_temperature ?? "--"} °C
+                </div>
+                <p>
+                  {selectedMachine.process_temperature_k ?? "--"} K
+                </p>
+              </div>
+
+              <div className="sensor-card">
+                <h3>Rotational Speed</h3>
+                <div className="sensor-value">
+                  {selectedMachine.rpm ?? selectedMachine.speed ?? "--"}
+                </div>
+                <p>RPM</p>
+              </div>
+
+              <div className="sensor-card">
+                <h3>Torque</h3>
+                <div className="sensor-value">
+                  {selectedMachine.torque ?? "--"}
+                </div>
+                <p>Nm</p>
+              </div>
+
+              <div className="sensor-card">
+                <h3>Tool Wear</h3>
+                <div className="sensor-value">
+                  {selectedMachine.tool_wear ?? "--"}
+                </div>
+                <p>Minutes</p>
+              </div>
+
+            </div>
+          </section>
+
+          {/* 3D MACHINE */}
+
+          <section className="dashboard-section">
+            <h2>3D Industrial Machine Visualization</h2>
             <p>
-              <strong>Health:</strong> {selectedMachine.health}%
+              Interactive machine model —{" "}
+              {selectedMachine.machine_id}
             </p>
 
-            <p>
-              <strong>Status:</strong> {selectedMachine.status}
-            </p>
+            <div className="machine-view">
+              <ThreeDScene machine={selectedMachine} />
+            </div>
+          </section>
+
+          {/* TREND CHART */}
+
+          <section className="dashboard-section">
+            <h2>Operating Speed Analysis</h2>
 
             <p>
-              <strong>Temperature:</strong>{" "}
-              {selectedMachine.temperature} °C
+              Rotational speed across the first 20 historical
+              operating records.
             </p>
 
-            <p>
-              <strong>Vibration:</strong>{" "}
-              {selectedMachine.vibration} mm/s
-            </p>
+            <div className="chart-container">
+              <Line data={chartData} options={chartOptions} />
+            </div>
+          </section>
+
+          {/* AI PREDICTION */}
+
+          <section className="dashboard-section">
+            <h2>AI Predictive Analysis</h2>
 
             <p>
-              <strong>Pressure:</strong>{" "}
-              {selectedMachine.pressure}
+              Analyze operating parameters using the Random Forest
+              model and SHAP explainability.
             </p>
 
-            <p>
-              <strong>RPM:</strong>{" "}
-              {selectedMachine.rpm ?? selectedMachine.speed ?? "--"}
-            </p>
+            <form
+              onSubmit={handlePrediction}
+              className="prediction-form"
+            >
+              <div className="sensor-grid">
 
-            <p>
-              <strong>Torque:</strong> {selectedMachine.torque}
-            </p>
+                <div className="sensor-card">
+                  <label htmlFor="air-temperature">
+                    Air Temperature (K)
+                  </label>
+                  <input
+                    id="air-temperature"
+                    type="number"
+                    step="any"
+                    name="air_temperature"
+                    value={predictionInputs.air_temperature}
+                    onChange={handlePredictionInput}
+                    required
+                  />
+                </div>
 
-            <p>
-              <strong>Tool Wear:</strong>{" "}
-              {selectedMachine.tool_wear}
-            </p>
+                <div className="sensor-card">
+                  <label htmlFor="process-temperature">
+                    Process Temperature (K)
+                  </label>
+                  <input
+                    id="process-temperature"
+                    type="number"
+                    step="any"
+                    name="process_temperature"
+                    value={predictionInputs.process_temperature}
+                    onChange={handlePredictionInput}
+                    required
+                  />
+                </div>
 
-            <p>
-              <strong>Failure:</strong>{" "}
-              {selectedMachine.failure === 1 ? "YES" : "NO"}
-            </p>
-          </div>
-        </section>
+                <div className="sensor-card">
+                  <label htmlFor="rotational-speed">
+                    Rotational Speed (RPM)
+                  </label>
+                  <input
+                    id="rotational-speed"
+                    type="number"
+                    step="any"
+                    name="rotational_speed"
+                    value={predictionInputs.rotational_speed}
+                    onChange={handlePredictionInput}
+                    required
+                  />
+                </div>
+
+                <div className="sensor-card">
+                  <label htmlFor="torque">
+                    Torque (Nm)
+                  </label>
+                  <input
+                    id="torque"
+                    type="number"
+                    step="any"
+                    name="torque"
+                    value={predictionInputs.torque}
+                    onChange={handlePredictionInput}
+                    required
+                  />
+                </div>
+
+                <div className="sensor-card">
+                  <label htmlFor="tool-wear">
+                    Tool Wear (Minutes)
+                  </label>
+                  <input
+                    id="tool-wear"
+                    type="number"
+                    step="any"
+                    name="tool_wear"
+                    value={predictionInputs.tool_wear}
+                    onChange={handlePredictionInput}
+                    required
+                  />
+                </div>
+
+              </div>
+
+              <br />
+
+              <button
+                type="submit"
+                disabled={predictionLoading}
+              >
+                {predictionLoading
+                  ? "Analyzing Operating Profile..."
+                  : "Analyze Operating Profile"}
+              </button>
+            </form>
+
+            {predictionError && (
+              <div className="alert-box critical" role="alert">
+                <h3>Prediction Error</h3>
+                <p>{predictionError}</p>
+              </div>
+            )}
+
+            {prediction && (
+              <div
+                className={`alert-box ${
+                  prediction.prediction === 1
+                    ? "critical"
+                    : "healthy"
+                }`}
+              >
+                <h3>AI Analysis Result</h3>
+
+                <div className="dashboard-cards">
+
+                  <div className="dashboard-card">
+                    <h3>Predicted Condition</h3>
+                    <div className="dashboard-value">
+                      {prediction.prediction === 1
+                        ? "FAILURE RISK"
+                        : "NORMAL"}
+                    </div>
+                    <span
+                      className={`status ${
+                        prediction.prediction === 1
+                          ? "critical"
+                          : "healthy"
+                      }`}
+                    >
+                      {prediction.status}
+                    </span>
+                  </div>
+
+                  <div className="dashboard-card">
+                    <h3>Failure Probability</h3>
+                    <div className="dashboard-value">
+                      {(
+                        Number(prediction.failure_probability) * 100
+                      ).toFixed(2)}%
+                    </div>
+                  </div>
+
+                  <div className="dashboard-card">
+                    <h3>AI Model</h3>
+                    <div className="dashboard-value">
+                      Random Forest
+                    </div>
+                  </div>
+
+                </div>
+
+                <h3>SHAP Explainability</h3>
+                <p>
+                  Factors contributing to this model prediction:
+                </p>
+
+                {Array.isArray(prediction.explanations) &&
+                  prediction.explanations.map((item) => (
+                    <div
+                      className="sensor-card"
+                      key={item.sensor}
+                      style={{ marginBottom: "10px" }}
+                    >
+                      <strong>{item.sensor}</strong>
+                      <p>
+                        SHAP Value: {item.shap_value}
+                      </p>
+                      <p>
+                        Contribution: {item.direction}
+                      </p>
+                    </div>
+                  ))}
+
+                <p>
+                  <strong>Model note:</strong> {prediction.note}
+                </p>
+
+                {prediction.notification && (
+                  <p>
+                    <strong>Maintenance alert:</strong>{" "}
+                    Notification #{prediction.notification.id} was created.
+                    View it in the Maintenance Notifications section above.
+                  </p>
+                )}
+              </div>
+            )}
+          </section>
+
+          {/* CONDITION SUMMARY */}
+
+          <section className="dashboard-section">
+            <h2>Operating Profile Summary</h2>
+
+            <div
+              className={`alert-box ${
+                failureRecorded ? "critical" : "healthy"
+              }`}
+            >
+              <h3>
+                {failureRecorded
+                  ? "Historical Failure Recorded"
+                  : "No Historical Failure Recorded"}
+              </h3>
+
+              <p>
+                <strong>Operating profile:</strong>{" "}
+                {selectedMachine.machine_id}
+              </p>
+
+              <p>
+                <strong>Product:</strong>{" "}
+                {selectedMachine.product_id}
+              </p>
+
+              <p>
+                <strong>Historical dataset label:</strong>{" "}
+                {machineCondition}
+              </p>
+
+              <p>
+                <strong>AI prediction:</strong>{" "}
+                {prediction
+                  ? prediction.prediction === 1
+                    ? "Failure risk predicted"
+                    : "No failure predicted"
+                  : "Run AI analysis to evaluate this profile"}
+              </p>
+
+              <p>
+                The historical condition reflects the dataset's
+                recorded failure label. The AI prediction is a
+                separate model result calculated from the five
+                operating parameters.
+              </p>
+            </div>
+          </section>
+        </>
       )}
     </div>
   );

@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import {
   OrbitControls,
@@ -8,10 +8,7 @@ import {
   Sparkles,
 } from "@react-three/drei";
 
-/* =========================================================
-   ROTATING SHAFT
-========================================================= */
-
+/* ROTATING SHAFT */
 function RotatingShaft() {
   const shaftRef = useRef();
 
@@ -39,10 +36,7 @@ function RotatingShaft() {
   );
 }
 
-/* =========================================================
-   AI CORE
-========================================================= */
-
+/* ANIMATED AI CORE */
 function AICore() {
   const coreRef = useRef();
 
@@ -51,7 +45,7 @@ function AICore() {
       const pulse =
         1 + Math.sin(state.clock.elapsedTime * 2.2) * 0.07;
 
-      coreRef.current.scale.set(pulse, pulse, pulse);
+      coreRef.current.scale.setScalar(pulse);
     }
   });
 
@@ -69,10 +63,7 @@ function AICore() {
   );
 }
 
-/* =========================================================
-   AI ENERGY RINGS
-========================================================= */
-
+/* ANIMATED ENERGY RINGS */
 function EnergyRings() {
   const ring1Ref = useRef();
   const ring2Ref = useRef();
@@ -117,10 +108,7 @@ function EnergyRings() {
   );
 }
 
-/* =========================================================
-   GLOWING SENSOR
-========================================================= */
-
+/* GLOWING SENSOR LIGHT */
 function GlowingSensor({ position }) {
   const sensorRef = useRef();
 
@@ -129,7 +117,7 @@ function GlowingSensor({ position }) {
       const pulse =
         1 + Math.sin(state.clock.elapsedTime * 3) * 0.1;
 
-      sensorRef.current.scale.set(pulse, pulse, pulse);
+      sensorRef.current.scale.setScalar(pulse);
     }
   });
 
@@ -145,25 +133,13 @@ function GlowingSensor({ position }) {
   );
 }
 
-/* =========================================================
-   SENSOR HUD
-========================================================= */
-
-function SensorIndicator({
+/* 3D PARAMETER DISPLAY */
+function ParameterIndicator({
   position,
   title,
   value,
-  status,
+  unit,
 }) {
-  const isCritical = status === "CRITICAL";
-  const isWarning = status === "WARNING";
-
-  const statusColor = isCritical
-    ? "#ff4d6d"
-    : isWarning
-      ? "#ffbd4a"
-      : "#36e0a0";
-
   return (
     <Html
       position={position}
@@ -178,6 +154,7 @@ function SensorIndicator({
             fontSize: "9px",
             fontWeight: "700",
             letterSpacing: "1px",
+            whiteSpace: "nowrap",
           }}
         >
           {title}
@@ -192,46 +169,38 @@ function SensorIndicator({
             whiteSpace: "nowrap",
           }}
         >
-          {value}
+          {value != null ? `${value} ${unit}` : "N/A"}
         </div>
 
         <div
           style={{
-            color: statusColor,
+            color: "#36e0a0",
             fontSize: "9px",
             marginTop: "3px",
             fontWeight: "700",
             whiteSpace: "nowrap",
           }}
         >
-          ● {status}
+          ● PROFILE VALUE
         </div>
       </div>
     </Html>
   );
 }
 
-/* =========================================================
-   INDUSTRIAL MACHINE
-========================================================= */
-
+/* INDUSTRIAL MACHINE MODEL */
 function Machine({ machine }) {
   const temperature = machine?.temperature;
-  const vibration = machine?.vibration;
-  const health = machine?.health;
-  const machineStatus = machine?.status ?? "CONNECTING";
+  const rpm = machine?.rpm ?? machine?.speed;
+  const torque = machine?.torque;
 
-  const temperatureValue =
-    temperature != null ? `${temperature}°C` : "--";
-
-  const vibrationValue =
-    vibration != null ? `${vibration} mm/s` : "--";
-
-  const healthValue =
-    health != null ? `${health}%` : "--";
+  const formatValue = (value, digits = 1) =>
+    value != null && Number.isFinite(Number(value))
+      ? Number(value).toFixed(digits)
+      : null;
 
   return (
-    <group scale={[1, 1, 1]} position={[0, -0.2, 0]}>
+    <group position={[0, -0.2, 0]}>
       {/* MAIN MACHINE BODY */}
       <mesh position={[0, 0, 0]}>
         <boxGeometry args={[2.4, 1.9, 2]} />
@@ -242,7 +211,7 @@ function Machine({ machine }) {
         />
       </mesh>
 
-      {/* MAIN BODY FRONT */}
+      {/* FRONT PANEL */}
       <mesh position={[0, 0, 1.05]}>
         <boxGeometry args={[1.95, 1.45, 0.12]} />
         <meshStandardMaterial
@@ -252,7 +221,7 @@ function Machine({ machine }) {
         />
       </mesh>
 
-      {/* FRONT CYAN PANEL */}
+      {/* CYAN PANEL */}
       <mesh position={[0, 0, 1.12]}>
         <boxGeometry args={[1.6, 1.08, 0.025]} />
         <meshStandardMaterial
@@ -276,11 +245,8 @@ function Machine({ machine }) {
         />
       </mesh>
 
-      {/* AI CORE AND ENERGY RINGS */}
       <AICore />
       <EnergyRings />
-
-      {/* ROTATING SHAFT */}
       <RotatingShaft />
 
       {/* TOP PANEL */}
@@ -293,7 +259,7 @@ function Machine({ machine }) {
         />
       </mesh>
 
-      {/* TOP CYAN STRIP */}
+      {/* TOP GLOW STRIP */}
       <mesh position={[0, 1.145, 0]}>
         <boxGeometry args={[1.75, 0.025, 1.35]} />
         <meshStandardMaterial
@@ -303,10 +269,9 @@ function Machine({ machine }) {
         />
       </mesh>
 
-      {/* TOP SENSOR */}
       <GlowingSensor position={[0, 1.2, 0]} />
 
-      {/* LEFT SIDE PANEL */}
+      {/* SIDE PANELS */}
       <mesh position={[-1.28, 0, 0]}>
         <boxGeometry args={[0.12, 1.6, 1.65]} />
         <meshStandardMaterial
@@ -316,7 +281,6 @@ function Machine({ machine }) {
         />
       </mesh>
 
-      {/* RIGHT SIDE PANEL */}
       <mesh position={[1.28, 0, 0]}>
         <boxGeometry args={[0.12, 1.6, 1.65]} />
         <meshStandardMaterial
@@ -326,24 +290,15 @@ function Machine({ machine }) {
         />
       </mesh>
 
-      {/* LEFT SUPPORT */}
+      {/* MACHINE SUPPORTS */}
       <mesh position={[-0.9, -1.2, 0]}>
         <boxGeometry args={[0.22, 0.55, 1.45]} />
-        <meshStandardMaterial
-          color="#0a304b"
-          metalness={0.88}
-          roughness={0.27}
-        />
+        <meshStandardMaterial color="#0a304b" metalness={0.88} />
       </mesh>
 
-      {/* RIGHT SUPPORT */}
       <mesh position={[0.9, -1.2, 0]}>
         <boxGeometry args={[0.22, 0.55, 1.45]} />
-        <meshStandardMaterial
-          color="#0a304b"
-          metalness={0.88}
-          roughness={0.27}
-        />
+        <meshStandardMaterial color="#0a304b" metalness={0.88} />
       </mesh>
 
       {/* MACHINE BASE */}
@@ -371,83 +326,33 @@ function Machine({ machine }) {
       <GlowingSensor position={[0.88, 0.72, 1.15]} />
       <GlowingSensor position={[-0.88, -0.65, 1.15]} />
 
-      {/* LIVE TEMPERATURE */}
-      <SensorIndicator
+      {/* AVAILABLE OPERATING PARAMETERS ONLY */}
+      <ParameterIndicator
         position={[-1.65, 0.9, 0.8]}
-        title="TEMPERATURE"
-        value={temperatureValue}
-        status={machine ? "LIVE" : "WAITING"}
+        title="AIR TEMPERATURE"
+        value={formatValue(temperature, 2)}
+        unit="°C"
       />
 
-      {/* LIVE VIBRATION */}
-      <SensorIndicator
+      <ParameterIndicator
         position={[1.65, 0.55, 0.9]}
-        title="VIBRATION"
-        value={vibrationValue}
-        status={machine ? machineStatus : "WAITING"}
+        title="ROTATIONAL SPEED"
+        value={formatValue(rpm, 0)}
+        unit="RPM"
       />
 
-      {/* MACHINE HEALTH */}
-      <SensorIndicator
+      <ParameterIndicator
         position={[-1.65, -0.75, 0.9]}
-        title="MOTOR HEALTH"
-        value={healthValue}
-        status={machine ? machineStatus : "WAITING"}
+        title="TORQUE"
+        value={formatValue(torque, 2)}
+        unit="Nm"
       />
     </group>
   );
 }
 
-/* =========================================================
-   MAIN 3D SCENE
-========================================================= */
-
-function ThreeDScene({ machine: selectedMachine }) {
-  const [apiMachine, setApiMachine] = useState(null);
-  const [apiError, setApiError] = useState(false);
-
-  useEffect(() => {
-    // A selected machine supplied by the parent takes priority.
-    if (selectedMachine) {
-      return;
-    }
-
-    let cancelled = false;
-
-    async function loadMachineData() {
-      try {
-        const response = await fetch(
-          "http://127.0.0.1:8000/api/health"
-        );
-
-        if (!response.ok) {
-          throw new Error("Could not load machine data");
-        }
-
-        const data = await response.json();
-        const firstMachine = data.machines?.[0] ?? null;
-
-        if (!cancelled) {
-          setApiMachine(firstMachine);
-          setApiError(!firstMachine);
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setApiError(true);
-          console.error("3D sensor data error:", error);
-        }
-      }
-    }
-
-    loadMachineData();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedMachine]);
-
-  const machine = selectedMachine ?? apiMachine;
-
+/* MAIN 3D SCENE */
+function ThreeDScene({ machine }) {
   return (
     <div className="hero-3d">
       <Canvas
@@ -456,11 +361,8 @@ function ThreeDScene({ machine: selectedMachine }) {
           fov: 42,
         }}
         dpr={[1, 2]}
-        gl={{
-          antialias: true,
-        }}
+        gl={{ antialias: true }}
       >
-        {/* LIGHTING */}
         <ambientLight intensity={1.15} />
 
         <directionalLight
@@ -489,7 +391,6 @@ function ThreeDScene({ machine: selectedMachine }) {
           distance={7}
         />
 
-        {/* FLOATING PARTICLES */}
         <Sparkles
           count={75}
           scale={[6, 5, 6]}
@@ -497,7 +398,6 @@ function ThreeDScene({ machine: selectedMachine }) {
           speed={0.25}
         />
 
-        {/* FLOATING INDUSTRIAL MACHINE */}
         <Float
           speed={1}
           rotationIntensity={0.08}
@@ -506,7 +406,6 @@ function ThreeDScene({ machine: selectedMachine }) {
           <Machine machine={machine} />
         </Float>
 
-        {/* CAMERA CONTROLS */}
         <OrbitControls
           enableZoom={false}
           enablePan={false}
@@ -516,19 +415,6 @@ function ThreeDScene({ machine: selectedMachine }) {
           maxPolarAngle={Math.PI / 1.9}
         />
       </Canvas>
-
-      {apiError && !selectedMachine && (
-        <div
-          style={{
-            color: "#ffb86b",
-            fontSize: "12px",
-            textAlign: "center",
-            padding: "8px",
-          }}
-        >
-          Backend unavailable — sensor data could not load.
-        </div>
-      )}
     </div>
   );
 }

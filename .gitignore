@@ -30,3 +30,9 @@ __pycache__/
 
 # Local ML model backups
 ml_model/failure_model_backup.joblib
+
+# Local Python environment
+.venv/
+
+# Local notification database
+notification_data.db
