@@ -1,38 +1,17 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-backend/__pycache__/
-
-__pycache__/
-*.py[cod]
-
-# Local ML model backups
-ml_model/failure_model_backup.joblib
-
-# Local Python environment
+# Python environment
+venv/
 .venv/
 
-# Local notification database
-notification_data.db
+# PPE dataset
+src/ppe_backend/PPE_Kit*/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Node dependencies and build files
+node_modules/
+dist/
+
+# Environment variables
+.env

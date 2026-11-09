@@ -1,4 +1,3 @@
-
 import { useEffect, useMemo, useState } from "react";
 import {
   Chart as ChartJS,
@@ -26,7 +25,11 @@ ChartJS.register(
   Filler
 );
 
-const API_URL = "http://127.0.0.1:8000";
+
+ 
+
+ const MACHINE_API = "http://127.0.0.1:8000";
+const PPE_API = "http://127.0.0.1:8001";
 const PAGE_SIZE = 1000;
 
 const EMPTY_INPUTS = {
@@ -37,7 +40,23 @@ const EMPTY_INPUTS = {
   tool_wear: "",
 };
 
+const INITIAL_PPE_STATUS = {
+  worker: false,
+  helmet: "UNKNOWN",
+  gloves: "UNKNOWN",
+  mask: "UNKNOWN",
+  vest: "UNKNOWN",
+  goggles: "UNKNOWN",
+  boots: "UNKNOWN",
+  violations: [],
+  message: "Waiting for detection",
+};
+
 function Dashboard() {
+  // ------------------------------------------
+  // MACHINE AND PREDICTIVE MAINTENANCE STATE
+  // ------------------------------------------
+
   const [machines, setMachines] = useState([]);
   const [selectedMachineId, setSelectedMachineId] = useState("");
   const [loading, setLoading] = useState(true);
@@ -53,12 +72,18 @@ function Dashboard() {
     useState(false);
   const [predictionError, setPredictionError] = useState("");
 
-  // Refresh notification panel after a new prediction.
   const [notificationRefreshKey, setNotificationRefreshKey] =
     useState(0);
 
   // ------------------------------------------
-  // LOAD OPERATING PROFILE DATA
+  // PPE MONITORING STATE
+  // ------------------------------------------
+
+  const [ppeStatus, setPpeStatus] = useState(INITIAL_PPE_STATUS);
+  const [ppeError, setPpeError] = useState("");
+
+  // ------------------------------------------
+  // FETCH MACHINE DATA
   // ------------------------------------------
 
   async function fetchMachineData(isRefresh = false) {
@@ -72,7 +97,7 @@ function Dashboard() {
       }
 
       const firstResponse = await fetch(
-        `${API_URL}/api/health?limit=${PAGE_SIZE}&offset=0`
+        `${MACHINE_API}/api/health?limit=${PAGE_SIZE}&offset=0`
       );
 
       if (!firstResponse.ok) {
@@ -85,7 +110,7 @@ function Dashboard() {
         throw new Error("Invalid operating profile response");
       }
 
-      const total = firstPage.total_count;
+      const total = Number(firstPage.total_count) || 0;
       const pageCount = Math.ceil(total / PAGE_SIZE);
 
       const remainingPages = await Promise.all(
@@ -95,7 +120,7 @@ function Dashboard() {
             const offset = (index + 1) * PAGE_SIZE;
 
             const response = await fetch(
-              `${API_URL}/api/health?limit=${PAGE_SIZE}&offset=${offset}`
+              `${MACHINE_API}/api/health?limit=${PAGE_SIZE}&offset=${offset}`
             );
 
             if (!response.ok) {
@@ -143,12 +168,63 @@ function Dashboard() {
     }
   }
 
+  // ------------------------------------------
+  // FETCH PPE STATUS
+  // ------------------------------------------
+
+  useEffect(() => {
+    let active = true;
+
+    async function fetchPPEStatus() {
+      try {
+        const response = await fetch(
+          `${PPE_API}/api/ppe-status`
+        );
+
+        if (!response.ok) {
+          throw new Error(`PPE backend error: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (active) {
+          setPpeStatus({
+            ...INITIAL_PPE_STATUS,
+            ...data,
+            violations: Array.isArray(data.violations)
+              ? data.violations
+              : [],
+          });
+          setPpeError("");
+        }
+      } catch (err) {
+        if (active) {
+          setPpeError(err.message || "Unable to connect to PPE backend");
+        }
+        console.error("PPE connection error:", err);
+      }
+    }
+
+    fetchPPEStatus();
+
+    const timer = setInterval(fetchPPEStatus, 1000);
+
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, []);
+
+  // ------------------------------------------
+  // INITIAL MACHINE DATA
+  // ------------------------------------------
+
   useEffect(() => {
     fetchMachineData();
   }, []);
 
   // ------------------------------------------
-  // SELECTED OPERATING PROFILE
+  // SELECTED MACHINE
   // ------------------------------------------
 
   const selectedMachine = useMemo(
@@ -159,7 +235,10 @@ function Dashboard() {
     [machines, selectedMachineId]
   );
 
-  // Set prediction defaults from the selected dataset profile.
+  // ------------------------------------------
+  // SET PREDICTION INPUT DEFAULTS
+  // ------------------------------------------
+
   useEffect(() => {
     if (!selectedMachine) return;
 
@@ -258,7 +337,7 @@ function Dashboard() {
   };
 
   // ------------------------------------------
-  // PREDICTION INPUTS
+  // PREDICTION INPUT HANDLER
   // ------------------------------------------
 
   function handlePredictionInput(event) {
@@ -271,7 +350,7 @@ function Dashboard() {
   }
 
   // ------------------------------------------
-  // RANDOM FOREST + SHAP + NOTIFICATIONS
+  // RANDOM FOREST PREDICTION
   // ------------------------------------------
 
   async function handlePrediction(event) {
@@ -280,6 +359,10 @@ function Dashboard() {
     setPrediction(null);
     setPredictionError("");
 
+    const hasEmptyInput = Object.values(
+      predictionInputs
+    ).some((value) => value.trim() === "");
+
     const numericInputs = Object.fromEntries(
       Object.entries(predictionInputs).map(([key, value]) => [
         key,
@@ -287,13 +370,9 @@ function Dashboard() {
       ])
     );
 
-    const hasEmptyInput = Object.values(predictionInputs).some(
-      (value) => value.trim() === ""
-    );
-
-    const hasInvalidInput = Object.values(numericInputs).some(
-      (value) => !Number.isFinite(value)
-    );
+    const hasInvalidInput = Object.values(
+      numericInputs
+    ).some((value) => !Number.isFinite(value));
 
     if (hasEmptyInput || hasInvalidInput) {
       setPredictionError(
@@ -318,7 +397,7 @@ function Dashboard() {
     setPredictionLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/predict`, {
+      const response = await fetch(`${MACHINE_API}/api/predict`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -342,7 +421,6 @@ function Dashboard() {
 
       setPrediction(data);
 
-      // Reload notifications after prediction.
       setNotificationRefreshKey((previous) => previous + 1);
     } catch (err) {
       console.error("Prediction error:", err);
@@ -355,7 +433,7 @@ function Dashboard() {
   }
 
   // ------------------------------------------
-  // LOADING
+  // LOADING SCREEN
   // ------------------------------------------
 
   if (loading) {
@@ -363,34 +441,15 @@ function Dashboard() {
       <div className="dashboard-page">
         <div className="dashboard-section">
           <h1>SmartPredict</h1>
-          <p>Initializing operating profile monitoring...</p>
+          <p>Loading predictive maintenance data...</p>
         </div>
       </div>
     );
   }
 
   // ------------------------------------------
-  // CONNECTION ERROR
+  // MACHINE STATUS
   // ------------------------------------------
-
-  if (error && machines.length === 0) {
-    return (
-      <div className="dashboard-page">
-        <div className="dashboard-section">
-          <h1>SmartPredict</h1>
-
-          <div className="alert-box critical">
-            <h3>Backend Connection Error</h3>
-            <p>{error}</p>
-
-            <button onClick={() => fetchMachineData()}>
-              Retry Connection
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   const failureRecorded = selectedMachine?.failure === 1;
 
@@ -412,7 +471,9 @@ function Dashboard() {
       <header className="dashboard-header">
         <div>
           <h1>SmartPredict</h1>
-          <p>Industrial Intelligence & Predictive Maintenance</p>
+          <p>
+            Industrial Intelligence & Predictive Maintenance
+          </p>
 
           <p>
             <strong>System Status:</strong>{" "}
@@ -425,8 +486,7 @@ function Dashboard() {
           </p>
 
           <p>
-            <strong>Last Sync:</strong>{" "}
-            {lastUpdated || "--"}
+            <strong>Last Sync:</strong> {lastUpdated || "--"}
           </p>
 
           {error && (
@@ -436,60 +496,176 @@ function Dashboard() {
           )}
         </div>
 
-        <div className="machine-selector">
-          <label htmlFor="machine-select">
-            <strong>Select Operating Profile</strong>
-          </label>
+        {machines.length > 0 && (
+          <div className="machine-selector">
+            <label htmlFor="machine-select">
+              <strong>Select Operating Profile</strong>
+            </label>
 
-          <br />
+            <br />
 
-          <select
-            id="machine-select"
-            value={selectedMachineId}
-            onChange={(event) =>
-              setSelectedMachineId(event.target.value)
-            }
-          >
-            {machines.map((machine) => (
-              <option
-                key={machine.machine_id}
-                value={machine.machine_id}
-              >
-                {machine.machine_id}
-              </option>
-            ))}
-          </select>
+            <select
+              id="machine-select"
+              value={selectedMachineId}
+              onChange={(event) =>
+                setSelectedMachineId(event.target.value)
+              }
+            >
+              {machines.map((machine) => (
+                <option
+                  key={machine.machine_id}
+                  value={machine.machine_id}
+                >
+                  {machine.machine_id}
+                </option>
+              ))}
+            </select>
 
-          <br />
-          <br />
+            <br />
+            <br />
 
-          <button
-            onClick={() => fetchMachineData(true)}
-            disabled={refreshing}
-          >
-            {refreshing ? "Refreshing..." : "Refresh Monitoring"}
-          </button>
-        </div>
+            <button
+              onClick={() => fetchMachineData(true)}
+              disabled={refreshing}
+            >
+              {refreshing ? "Refreshing..." : "Refresh Monitoring"}
+            </button>
+          </div>
+        )}
       </header>
 
-      {/* NOTIFICATION PANEL */}
+      {/* =====================================
+          PPE LIVE MONITORING
+      ===================================== */}
 
-      <NotificationPanel refreshKey={notificationRefreshKey} />
+      <section className="dashboard-section">
+        <h2>Live PPE Safety Monitoring</h2>
 
-      {/* DASHBOARD CONTENT */}
+        <p>
+          Real-time worker and personal protective equipment
+          detection using the trained AI model.
+        </p>
 
-      {selectedMachine && (
+        {ppeError && (
+          <div className="alert-box critical" role="alert">
+            <h3>PPE Connection Warning</h3>
+            <p>{ppeError}</p>
+          </div>
+        )}
+
+        <div className="machine-view">
+          <img
+            src={`${PPE_API}/video`}
+            alt="Live PPE detection camera"
+            style={{
+              width: "100%",
+              maxWidth: "900px",
+              borderRadius: "12px",
+              display: "block",
+              margin: "auto",
+              minHeight: "250px",
+              objectFit: "contain",
+              background: "#111827",
+            }}
+          />
+        </div>
+
+        <h3>Worker Safety Status</h3>
+
+        <div className="dashboard-cards">
+          <div className="dashboard-card">
+            <h3>Worker Detection</h3>
+
+            <div className="dashboard-value">
+              {ppeStatus.worker ? "DETECTED" : "NOT DETECTED"}
+            </div>
+
+            <span
+              className={`status ${
+                ppeStatus.worker ? "healthy" : "critical"
+              }`}
+            >
+              {ppeStatus.worker ? "WORKER FOUND" : "NO WORKER FOUND"}
+            </span>
+          </div>
+
+          {[
+            ["Helmet", ppeStatus.helmet],
+            ["Gloves", ppeStatus.gloves],
+            ["Mask", ppeStatus.mask],
+            ["Safety Vest", ppeStatus.vest],
+            ["Safety Glasses", ppeStatus.goggles],
+            ["Safety Shoes", ppeStatus.boots],
+          ].map(([name, value]) => (
+            <div className="dashboard-card" key={name}>
+              <h3>{name}</h3>
+
+              <div className="dashboard-value">
+                {value || "UNKNOWN"}
+              </div>
+
+              <span
+                className={`status ${
+                  value === "DETECTED"
+                    ? "healthy"
+                    : value === "NOT DETECTED"
+                      ? "critical"
+                      : ""
+                }`}
+              >
+                {value || "UNKNOWN"}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <h3>Safety Violations</h3>
+
+        <div className="alert-box">
+          {ppeStatus.violations?.length > 0 ? (
+            ppeStatus.violations.map((item, index) => (
+              <p key={index}>⚠ {item}</p>
+            ))
+          ) : (
+            <p>
+              No violations reported by the current detection model.
+            </p>
+          )}
+        </div>
+
+        <p>
+          <strong>Detection Message:</strong>{" "}
+          {ppeStatus.message || "Waiting for detection"}
+        </p>
+      </section>
+
+      {/* =====================================
+          NOTIFICATIONS
+      ===================================== */}
+
+      <NotificationPanel
+        refreshKey={notificationRefreshKey}
+      />
+
+      {/* =====================================
+          PREDICTIVE MAINTENANCE
+      ===================================== */}
+
+      {selectedMachine ? (
         <>
-          {/* TOP STATUS */}
+          {/* MACHINE OVERVIEW */}
 
           <section className="dashboard-section">
-            <div className="dashboard-cards">
+            <h2>Predictive Maintenance Overview</h2>
 
+            <div className="dashboard-cards">
               <div className="dashboard-card">
                 <h3>Selected Operating Profile</h3>
+
                 <div className="dashboard-value">
                   {selectedMachine.machine_id}
                 </div>
+
                 <span className="status healthy">
                   PROFILE ACTIVE
                 </span>
@@ -497,9 +673,11 @@ function Dashboard() {
 
               <div className="dashboard-card">
                 <h3>Historical Condition</h3>
+
                 <div className="dashboard-value">
                   {failureRecorded ? "ATTENTION" : "NORMAL"}
                 </div>
+
                 <span
                   className={`status ${
                     failureRecorded ? "critical" : "healthy"
@@ -511,44 +689,46 @@ function Dashboard() {
 
               <div className="dashboard-card">
                 <h3>Product ID</h3>
+
                 <div className="dashboard-value">
-                  {selectedMachine.product_id}
+                  {selectedMachine.product_id ?? "--"}
                 </div>
+
                 <span className="status healthy">
-                  TYPE {selectedMachine.product_type}
+                  TYPE {selectedMachine.product_type ?? "--"}
                 </span>
               </div>
 
               <div className="dashboard-card">
                 <h3>AI Prediction Engine</h3>
-                <div className="dashboard-value">
-                  READY
-                </div>
+
+                <div className="dashboard-value">READY</div>
+
                 <span className="status healthy">
                   RANDOM FOREST
                 </span>
               </div>
-
             </div>
           </section>
 
-          {/* SENSOR MONITORING */}
+          {/* OPERATING PARAMETERS */}
 
           <section className="dashboard-section">
             <h2>Operating Parameter Monitoring</h2>
 
             <p>
               Historical dataset readings for{" "}
-              {selectedMachine.machine_id}
+              {selectedMachine.machine_id}.
             </p>
 
             <div className="sensor-grid">
-
               <div className="sensor-card">
                 <h3>Air Temperature</h3>
+
                 <div className="sensor-value">
                   {selectedMachine.temperature ?? "--"} °C
                 </div>
+
                 <p>
                   {selectedMachine.temperature_k ?? "--"} K
                 </p>
@@ -556,9 +736,11 @@ function Dashboard() {
 
               <div className="sensor-card">
                 <h3>Process Temperature</h3>
+
                 <div className="sensor-value">
                   {selectedMachine.process_temperature ?? "--"} °C
                 </div>
+
                 <p>
                   {selectedMachine.process_temperature_k ?? "--"} K
                 </p>
@@ -566,35 +748,42 @@ function Dashboard() {
 
               <div className="sensor-card">
                 <h3>Rotational Speed</h3>
+
                 <div className="sensor-value">
-                  {selectedMachine.rpm ?? selectedMachine.speed ?? "--"}
+                  {selectedMachine.rpm ??
+                    selectedMachine.speed ??
+                    "--"}
                 </div>
+
                 <p>RPM</p>
               </div>
 
               <div className="sensor-card">
                 <h3>Torque</h3>
+
                 <div className="sensor-value">
                   {selectedMachine.torque ?? "--"}
                 </div>
+
                 <p>Nm</p>
               </div>
 
               <div className="sensor-card">
                 <h3>Tool Wear</h3>
+
                 <div className="sensor-value">
                   {selectedMachine.tool_wear ?? "--"}
                 </div>
+
                 <p>Minutes</p>
               </div>
-
             </div>
           </section>
 
           {/* 3D MACHINE */}
-
           <section className="dashboard-section">
             <h2>3D Industrial Machine Visualization</h2>
+
             <p>
               Interactive machine model —{" "}
               {selectedMachine.machine_id}
@@ -605,7 +794,7 @@ function Dashboard() {
             </div>
           </section>
 
-          {/* TREND CHART */}
+          {/* SPEED CHART */}
 
           <section className="dashboard-section">
             <h2>Operating Speed Analysis</h2>
@@ -620,7 +809,7 @@ function Dashboard() {
             </div>
           </section>
 
-          {/* AI PREDICTION */}
+          {/* AI PREDICTION FORM */}
 
           <section className="dashboard-section">
             <h2>AI Predictive Analysis</h2>
@@ -635,11 +824,11 @@ function Dashboard() {
               className="prediction-form"
             >
               <div className="sensor-grid">
-
                 <div className="sensor-card">
                   <label htmlFor="air-temperature">
                     Air Temperature (K)
                   </label>
+
                   <input
                     id="air-temperature"
                     type="number"
@@ -655,6 +844,7 @@ function Dashboard() {
                   <label htmlFor="process-temperature">
                     Process Temperature (K)
                   </label>
+
                   <input
                     id="process-temperature"
                     type="number"
@@ -670,6 +860,7 @@ function Dashboard() {
                   <label htmlFor="rotational-speed">
                     Rotational Speed (RPM)
                   </label>
+
                   <input
                     id="rotational-speed"
                     type="number"
@@ -685,6 +876,7 @@ function Dashboard() {
                   <label htmlFor="torque">
                     Torque (Nm)
                   </label>
+
                   <input
                     id="torque"
                     type="number"
@@ -700,6 +892,7 @@ function Dashboard() {
                   <label htmlFor="tool-wear">
                     Tool Wear (Minutes)
                   </label>
+
                   <input
                     id="tool-wear"
                     type="number"
@@ -710,7 +903,6 @@ function Dashboard() {
                     required
                   />
                 </div>
-
               </div>
 
               <br />
@@ -726,7 +918,10 @@ function Dashboard() {
             </form>
 
             {predictionError && (
-              <div className="alert-box critical" role="alert">
+              <div
+                className="alert-box critical"
+                role="alert"
+              >
                 <h3>Prediction Error</h3>
                 <p>{predictionError}</p>
               </div>
@@ -735,140 +930,91 @@ function Dashboard() {
             {prediction && (
               <div
                 className={`alert-box ${
-                  prediction.prediction === 1
+                  Number(prediction.prediction) === 1
                     ? "critical"
                     : "healthy"
                 }`}
               >
                 <h3>AI Analysis Result</h3>
 
-                <div className="dashboard-cards">
-
-                  <div className="dashboard-card">
-                    <h3>Predicted Condition</h3>
-                    <div className="dashboard-value">
-                      {prediction.prediction === 1
-                        ? "FAILURE RISK"
-                        : "NORMAL"}
-                    </div>
-                    <span
-                      className={`status ${
-                        prediction.prediction === 1
-                          ? "critical"
-                          : "healthy"
-                      }`}
-                    >
-                      {prediction.status}
-                    </span>
-                  </div>
-
-                  <div className="dashboard-card">
-                    <h3>Failure Probability</h3>
-                    <div className="dashboard-value">
-                      {(
-                        Number(prediction.failure_probability) * 100
-                      ).toFixed(2)}%
-                    </div>
-                  </div>
-
-                  <div className="dashboard-card">
-                    <h3>AI Model</h3>
-                    <div className="dashboard-value">
-                      Random Forest
-                    </div>
-                  </div>
-
+                <div className="dashboard-value">
+                  {Number(prediction.prediction) === 1
+                    ? "FAILURE PREDICTED"
+                    : "NO FAILURE PREDICTED"}
                 </div>
 
-                <h3>SHAP Explainability</h3>
-                <p>
-                  Factors contributing to this model prediction:
-                </p>
-
-                {Array.isArray(prediction.explanations) &&
-                  prediction.explanations.map((item) => (
-                    <div
-                      className="sensor-card"
-                      key={item.sensor}
-                      style={{ marginBottom: "10px" }}
-                    >
-                      <strong>{item.sensor}</strong>
-                      <p>
-                        SHAP Value: {item.shap_value}
-                      </p>
-                      <p>
-                        Contribution: {item.direction}
-                      </p>
-                    </div>
-                  ))}
-
-                <p>
-                  <strong>Model note:</strong> {prediction.note}
-                </p>
-
-                {prediction.notification && (
+                {prediction.probability !== undefined && (
                   <p>
-                    <strong>Maintenance alert:</strong>{" "}
-                    Notification #{prediction.notification.id} was created.
-                    View it in the Maintenance Notifications section above.
+                    Failure Probability:{" "}
+                    {typeof prediction.probability === "number"
+                      ? `${(prediction.probability * 100).toFixed(2)}%`
+                      : String(prediction.probability)}
                   </p>
                 )}
+
+                {prediction.message && (
+                  <p>{prediction.message}</p>
+                )}
+
+                {prediction.shap_explanation && (
+                  <div>
+                    <h3>SHAP Explanation</h3>
+
+                    <pre
+                      style={{
+                        whiteSpace: "pre-wrap",
+                        overflowX: "auto",
+                      }}
+                    >
+                      {typeof prediction.shap_explanation === "string"
+                        ? prediction.shap_explanation
+                        : JSON.stringify(
+                            prediction.shap_explanation,
+                            null,
+                            2
+                          )}
+                    </pre>
+                  </div>
+                )}
+
+                <details>
+                  <summary>
+                    View complete prediction response
+                  </summary>
+
+                  <pre
+                    style={{
+                      whiteSpace: "pre-wrap",
+                      overflowX: "auto",
+                    }}
+                  >
+                    {JSON.stringify(prediction, null, 2)}
+                  </pre>
+                </details>
               </div>
             )}
           </section>
-
-          {/* CONDITION SUMMARY */}
-
-          <section className="dashboard-section">
-            <h2>Operating Profile Summary</h2>
-
-            <div
-              className={`alert-box ${
-                failureRecorded ? "critical" : "healthy"
-              }`}
-            >
-              <h3>
-                {failureRecorded
-                  ? "Historical Failure Recorded"
-                  : "No Historical Failure Recorded"}
-              </h3>
-
-              <p>
-                <strong>Operating profile:</strong>{" "}
-                {selectedMachine.machine_id}
-              </p>
-
-              <p>
-                <strong>Product:</strong>{" "}
-                {selectedMachine.product_id}
-              </p>
-
-              <p>
-                <strong>Historical dataset label:</strong>{" "}
-                {machineCondition}
-              </p>
-
-              <p>
-                <strong>AI prediction:</strong>{" "}
-                {prediction
-                  ? prediction.prediction === 1
-                    ? "Failure risk predicted"
-                    : "No failure predicted"
-                  : "Run AI analysis to evaluate this profile"}
-              </p>
-
-              <p>
-                The historical condition reflects the dataset's
-                recorded failure label. The AI prediction is a
-                separate model result calculated from the five
-                operating parameters.
-              </p>
-            </div>
-          </section>
         </>
+      ) : (
+        <section className="dashboard-section">
+          <h2>Predictive Maintenance</h2>
+
+          <p>
+            No machine operating profiles are available. Check
+            the backend connection and dataset API.
+          </p>
+
+          {error && <p>{error}</p>}
+
+          <button onClick={() => fetchMachineData()}>
+            Retry Loading Machine Data
+          </button>
+        </section>
       )}
     </div>
   );
 }
 
 export default Dashboard;
+          
+
