@@ -12,14 +12,13 @@ saved_data = joblib.load(folder / "failure_model.joblib")
 model = saved_data["model"]
 features = saved_data["features"]
 
-# Example sensor readings (same values tested earlier)
+# Example sensor readings matching the trained AI4I model features
 sensor_values = {
-    "temperature": 80,
-    "vibration": 0.8,
-    "pressure": 100,
-    "speed": 1500,
-    "torque": 45,
-    "tool_wear": 150,
+    "Air temperature [K]": 300.0,
+    "Process temperature [K]": 310.0,
+    "Rotational speed [rpm]": 1500.0,
+    "Torque [Nm]": 40.0,
+    "Tool wear [min]": 100.0,
 }
 
 sensor_data = pd.DataFrame(

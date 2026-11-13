@@ -1,4 +1,7 @@
-from predictor import predict_machine
+try:
+    from ml_model.predictor import predict_machine
+except ModuleNotFoundError:
+    from predictor import predict_machine
 
 # Test readings must use the five features from ai4i2020_cleaned.csv.
 # These are example values, not a real machine diagnosis.
