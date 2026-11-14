@@ -1,3 +1,4 @@
+
 name: CI
 
 on:
@@ -24,13 +25,12 @@ jobs:
 
       - name: Run test suite
         env:
-          # Never use production secrets or a real database in CI.
           ENVIRONMENT: development
           SMARTPREDICT_DB_PATH: ci-test.db
           INITIAL_ADMIN_PASSWORD: CiAdminBootstrap!2026
           JWT_SECRET_KEY: ci-only-jwt-secret-value-not-for-production
           CSRF_SECRET_KEY: ci-only-csrf-secret-value-not-for-production
-        run: pytest tests -q
+        run: python -m pytest tests -q
 
   frontend:
     name: Frontend lint and build
