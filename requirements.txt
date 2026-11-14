@@ -13,3 +13,11 @@ joblib>=1.4.0
 
 # Explainable AI
 shap>=0.46.0
+
+# Security, Authentication & Testing (Phase 2 Stage 1)
+bcrypt>=4.0.0
+PyJWT>=2.8.0
+email-validator>=2.0.0
+httpx>=0.27.0
+pytest>=8.0.0
+

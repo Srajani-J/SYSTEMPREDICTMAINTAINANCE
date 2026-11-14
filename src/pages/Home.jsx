@@ -1,6 +1,8 @@
 
+import { lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
-import ThreeDScene from "../components/ThreeDScene";
+const ThreeDScene = lazy(() => import("../components/ThreeDScene"));
+import SceneErrorBoundary from "../components/SceneErrorBoundary";
 
 function Home() {
   const scrollToPlatform = () => {
@@ -127,7 +129,11 @@ function Home() {
 
         {/* 3D MACHINE */}
         <div className="hero-3d">
-          <ThreeDScene />
+          <SceneErrorBoundary>
+            <Suspense fallback={<p>Loading 3D machine model...</p>}>
+              <ThreeDScene />
+            </Suspense>
+          </SceneErrorBoundary>
         </div>
 
       </section>

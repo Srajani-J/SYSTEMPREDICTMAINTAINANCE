@@ -1,133 +1,111 @@
+"""
+SmartPredict API.
 
-from functools import lru_cache
-from math import isfinite
-from pathlib import Path
+Layers
+------
+* ``create_app`` builds the application: configuration, CORS, lifespan and
+  routers.
+* Every dataset, prediction and notification endpoint requires a valid bearer
+  token; mutating notification endpoints are role-gated.
+* Errors are logged with a reference id and returned as generic messages so
+  internals (SQL, stack traces, file paths) never reach the client.
+"""
+
+from __future__ import annotations
+
+from contextlib import asynccontextmanager
+import logging
+import uuid
 
 import pandas as pd
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from ml_model.predictor import predict_machine
-
+from backend import settings
+from backend.access import machine_scope, sees_all_machines
+from backend.analytics import database_overview, work_order_stats
+from backend.assignments_service import list_assignments
+from backend.auth_service import bootstrap_admin
+from backend.database import init_db
+from backend.dataset import (
+    DATA_FILE,
+    dataset_or_error,
+    filter_machines,
+    find_machine,
+    historical_failure_count,
+    machine_id_for,
+    machine_records,
+    parse_machine_id,
+    total_machines,
+)
+from backend.deps import get_current_user, require_roles
 from backend.notification_service import (
-    initialize_notification_db,
+    acknowledge_notification,
+    assign_notification,
+    count_notifications,
     create_notification,
     list_notifications,
-    assign_notification,
-    acknowledge_notification,
     resolve_notification,
 )
-
-
-# ==================================================
-# APPLICATION CONFIGURATION
-# ==================================================
-
-app = FastAPI(
-    title="SmartPredict API",
-    description=(
-        "Predictive maintenance API using the AI4I dataset, "
-        "Random Forest, SHAP explainability and maintenance notifications."
-    ),
-    version="2.2.0",
+from backend.predictions_service import (
+    latest_for_machine,
+    list_predictions,
+    record_prediction,
 )
+from backend.ratelimit import enforce
+from backend.risk import RISK_BANDS, RISK_LEVELS, risk_level
+from backend.routers.admin import admin_router, router as admin_users_router
+from backend.routers.auth import router as auth_router
+from ml_model.predictor import predict_machine
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://localhost:5175",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:5174",
-        "http://127.0.0.1:5175",
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+logger = logging.getLogger("smartpredict.api")
 
+APP_VERSION = "2.3.0"
 
 # ==================================================
-# NOTIFICATION DATABASE INITIALIZATION
+# APPLICATION LIFECYCLE
 # ==================================================
 
-initialize_notification_db()
-
-
-# ==================================================
-# DATASET CONFIGURATION
-# ==================================================
-
-BASE_DIR = Path(__file__).resolve().parent.parent
-
-DATA_FILE = (
-    BASE_DIR
-    / "data archive"
-    / "ai4i2020_cleaned.csv"
-)
-
-REQUIRED_COLUMNS = [
-    "UDI",
-    "Product ID",
-    "Type",
-    "Air temperature [K]",
-    "Process temperature [K]",
-    "Rotational speed [rpm]",
-    "Torque [Nm]",
-    "Tool wear [min]",
-    "Machine failure",
-]
-
-
-@lru_cache(maxsize=1)
-def load_dataset():
-    """Load and validate the cleaned dataset."""
-
-    if not DATA_FILE.exists():
-        raise FileNotFoundError(
-            f"Dataset not found: {DATA_FILE}"
-        )
-
-    df = pd.read_csv(DATA_FILE)
-
-    missing_columns = [
-        column
-        for column in REQUIRED_COLUMNS
-        if column not in df.columns
-    ]
-
-    if missing_columns:
-        raise ValueError(
-            f"Missing dataset columns: {missing_columns}"
-        )
-
-    return df
-
-
-def get_dataset():
-    """Load the dataset and return a useful API error if needed."""
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    """Prepare the database and bootstrap the first administrator."""
+    init_db()
 
     try:
-        return load_dataset()
+        admin = bootstrap_admin()
+    except (ValueError, RuntimeError) as exc:
+        # In production a missing bootstrap password is fatal; in development
+        # the API still starts so the rest of the project can be exercised.
+        if settings.IS_PRODUCTION:
+            raise
+        logger.warning("Administrator bootstrap skipped: %s", exc)
+    else:
+        if admin is not None:
+            logger.warning(
+                "Bootstrapped administrator account %s (must change password "
+                "on first sign-in).",
+                admin["email"],
+            )
 
-    except (FileNotFoundError, ValueError) as exc:
-        raise HTTPException(
-            status_code=500,
-            detail=str(exc),
-        ) from exc
+    if not DATA_FILE.exists():
+        logger.error("Dataset not found at %s; dataset endpoints will fail.", DATA_FILE)
+
+    logger.info(
+        "SmartPredict %s started (environment=%s, database=%s).",
+        APP_VERSION,
+        settings.ENVIRONMENT,
+        settings.database_path(),
+    )
+
+    yield
 
 
-def safe_float(value):
-    """Convert a dataset value into a JSON-safe float."""
+# ==================================================
+# ROUTES
+# ==================================================
 
-    number = float(value)
-
-    if not isfinite(number):
-        return None
-
-    return round(number, 2)
+api = APIRouter()
 
 
 def pagination_response(total, limit, offset, data):
@@ -147,68 +125,79 @@ def pagination_response(total, limit, offset, data):
 # ==================================================
 
 class PredictionRequest(BaseModel):
+    """
+    Sensor readings for one prediction.
+
+    Bounds are physical plausibility limits, deliberately wider than the AI4I
+    training range (air 295-305 K, process 306-314 K, RPM 1168-2886, torque
+    3.8-76.6 Nm, tool wear 0-253 min) so the API rejects impossible telemetry
+    while still accepting unusual-but-real readings.
+    """
 
     air_temperature: float = Field(
-        allow_inf_nan=False
+        ge=233.15,
+        le=473.15,
+        allow_inf_nan=False,
+        description="Air temperature in Kelvin (-40 C to 200 C).",
     )
 
     process_temperature: float = Field(
-        allow_inf_nan=False
+        ge=233.15,
+        le=523.15,
+        allow_inf_nan=False,
+        description="Process temperature in Kelvin (-40 C to 250 C).",
     )
 
     rotational_speed: float = Field(
-        allow_inf_nan=False
+        ge=0,
+        le=30000,
+        allow_inf_nan=False,
+        description="Rotational speed in RPM.",
     )
 
     torque: float = Field(
-        allow_inf_nan=False
+        ge=0,
+        le=1000,
+        allow_inf_nan=False,
+        description="Torque in Newton-metres.",
     )
 
     tool_wear: float = Field(
-        allow_inf_nan=False
+        ge=0,
+        le=10000,
+        allow_inf_nan=False,
+        description="Tool wear in minutes.",
     )
 
     # Optional profile details for notifications.
-    profile_id: str | None = None
-
-    product_id: str | None = None
+    profile_id: str | None = Field(default=None, max_length=64)
+    product_id: str | None = Field(default=None, max_length=64)
 
 
 class AssignNotificationRequest(BaseModel):
-
-    assigned_to: str = Field(
-        min_length=2,
-        max_length=120
-    )
+    assigned_to: str = Field(min_length=2, max_length=120)
 
 
 # ==================================================
-# ROOT ENDPOINT
+# ROOT & STATUS (public, used by uptime checks)
 # ==================================================
 
-@app.get("/")
+@api.get("/")
 def root():
-
     return {
         "message": "SmartPredict API is running",
         "project": "SmartPredict",
-        "version": "2.2.0",
-        "dataset": DATA_FILE.name,
+        "version": APP_VERSION,
         "notification_system": "enabled",
     }
 
 
-# ==================================================
-# API STATUS
-# ==================================================
-
-@app.get("/api/status")
+@api.get("/api/status")
 def api_status():
-
     return {
         "status": "online",
         "project": "SmartPredict",
-        "version": "2.2.0",
+        "version": APP_VERSION,
         "message": "SmartPredict API is working successfully",
         "notification_system": "enabled",
     }
@@ -218,126 +207,72 @@ def api_status():
 # MACHINE HEALTH / DASHBOARD RECORDS
 # ==================================================
 
-@app.get("/api/health")
+@api.get("/api/health")
 def get_machine_health(
-    limit: int = Query(
-        default=100,
-        ge=1,
-        le=1000
-    ),
-    offset: int = Query(
-        default=0,
-        ge=0
-    ),
+    limit: int = Query(default=100, ge=1, le=1000),
+    offset: int = Query(default=0, ge=0),
+    _user: dict = Depends(get_current_user),
 ):
     """
     Return paginated historical AI4I dataset records.
 
-    Important:
-    - These are historical records, not live telemetry.
-    - No validated health score is available.
-    - Vibration and pressure are not present in the dataset.
-    - Failure is the historical Machine failure label.
+    These are historical records, not live telemetry. No validated health
+    score exists, and vibration/pressure are not part of the dataset.
     """
 
-    df = get_dataset()
+    df = dataset_or_error()
 
-    total_count = len(df)
-
-    page = df.iloc[offset:offset + limit]
-
-    machines = []
-
-    for _, row in page.iterrows():
-
-        record_id = int(row["UDI"])
-
-        failure = int(row["Machine failure"])
-
-        air_temperature_k = float(
-            row["Air temperature [K]"]
-        )
-
-        process_temperature_k = float(
-            row["Process temperature [K]"]
-        )
-
-        rpm = safe_float(
-            row["Rotational speed [rpm]"]
-        )
-
-        record = {
-
-            "record_id": record_id,
-
-            "machine_id": f"UDI-{record_id:05d}",
-
-            "product_id": str(row["Product ID"]),
-
-            "product_type": str(row["Type"]),
-
-            # No validated health score is available.
-            "health": None,
-
-            "status": (
-                "FAILURE_RECORDED"
-                if failure == 1
-                else "NO_FAILURE_RECORDED"
-            ),
-
-            # Air temperature in Celsius.
-            "temperature": round(
-                air_temperature_k - 273.15,
-                2
-            ),
-
-            # Original air temperature in Kelvin.
-            "temperature_k": round(
-                air_temperature_k,
-                2
-            ),
-
-            # Process temperature in Celsius.
-            "process_temperature": round(
-                process_temperature_k - 273.15,
-                2
-            ),
-
-            # Original process temperature in Kelvin.
-            "process_temperature_k": round(
-                process_temperature_k,
-                2
-            ),
-
-            # Not available in the AI4I dataset.
-            "vibration": None,
-
-            "pressure": None,
-
-            "speed": rpm,
-
-            "rpm": rpm,
-
-            "torque": safe_float(
-                row["Torque [Nm]"]
-            ),
-
-            "tool_wear": safe_float(
-                row["Tool wear [min]"]
-            ),
-
-            # Historical target, not a model prediction.
-            "failure": failure,
-        }
-
-        machines.append(record)
+    records = machine_records(df, offset, limit)
 
     return {
-        "total_count": total_count,
-        "count": len(machines),
+        "total_count": len(df),
+        "count": len(records),
         "limit": limit,
         "offset": offset,
-        "machines": machines,
+        "machines": records,
+        "data_source": "AI4I 2020 cleaned dataset",
+        "record_type": "historical_dataset_records",
+        "health_score_available": False,
+    }
+
+
+@api.get("/api/machines")
+def list_machines(
+    q: str | None = Query(
+        default=None,
+        max_length=64,
+        description="Search by record id, product id or product type.",
+    ),
+    product_type: str | None = Query(default=None, max_length=1),
+    failure: int | None = Query(default=None, ge=0, le=1),
+    limit: int = Query(default=50, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+    _user: dict = Depends(get_current_user),
+):
+    """
+    Search and page the historical operating profiles.
+
+    The dashboard uses this to fill its profile selector, so the browser never
+    downloads the complete dataset to show a handful of machines.
+    """
+
+    df = dataset_or_error()
+
+    filtered = filter_machines(
+        df,
+        query=q,
+        product_type=product_type,
+        failure=failure,
+    )
+
+    records = machine_records(filtered, offset, limit)
+
+    return {
+        "total_count": len(filtered),
+        "count": len(records),
+        "limit": limit,
+        "offset": offset,
+        "machines": records,
         "data_source": "AI4I 2020 cleaned dataset",
         "record_type": "historical_dataset_records",
         "health_score_available": False,
@@ -348,23 +283,15 @@ def get_machine_health(
 # SENSOR DATA ENDPOINT
 # ==================================================
 
-@app.get("/api/sensors")
+@api.get("/api/sensors")
 def get_sensors(
-    limit: int = Query(
-        default=100,
-        ge=1,
-        le=1000
-    ),
-    offset: int = Query(
-        default=0,
-        ge=0
-    ),
+    limit: int = Query(default=100, ge=1, le=1000),
+    offset: int = Query(default=0, ge=0),
+    _user: dict = Depends(get_current_user),
 ):
-    """
-    Return paginated original AI4I dataset records.
-    """
+    """Return paginated original AI4I dataset records."""
 
-    df = get_dataset()
+    df = dataset_or_error()
 
     total_count = len(df)
 
@@ -392,12 +319,7 @@ def get_sensors(
         cleaned_records.append(cleaned_record)
 
     return {
-        **pagination_response(
-            total_count,
-            limit,
-            offset,
-            cleaned_records,
-        ),
+        **pagination_response(total_count, limit, offset, cleaned_records),
         "data_source": "AI4I 2020 cleaned dataset",
     }
 
@@ -406,118 +328,150 @@ def get_sensors(
 # RANDOM FOREST + SHAP PREDICTION ENDPOINT
 # ==================================================
 
-@app.post("/api/predict")
-def predict_failure(request: PredictionRequest):
+@api.post("/api/predict")
+def predict_failure(
+    request: Request,
+    payload: PredictionRequest,
+    user: dict = Depends(get_current_user),
+):
     """
-    Predict machine failure using the saved Random Forest model.
+    Predict machine failure with the saved Random Forest model and explain the
+    result with SHAP.
 
-    Creates a maintenance notification when the AI identifies
-    sufficient failure risk.
-
-    SHAP explains model output, not real-world causation.
+    A maintenance notification is stored when the model reports meaningful
+    risk. SHAP explains model output, not real-world causation.
     """
+
+    enforce(
+        request,
+        "predict",
+        settings.RATE_LIMIT_PREDICT,
+        settings.RATE_LIMIT_WINDOW_SECONDS,
+        subject=str(user["id"]),
+    )
 
     sensor_readings = {
-
-        "Air temperature [K]":
-            request.air_temperature,
-
-        "Process temperature [K]":
-            request.process_temperature,
-
-        "Rotational speed [rpm]":
-            request.rotational_speed,
-
-        "Torque [Nm]":
-            request.torque,
-
-        "Tool wear [min]":
-            request.tool_wear,
+        "Air temperature [K]": payload.air_temperature,
+        "Process temperature [K]": payload.process_temperature,
+        "Rotational speed [rpm]": payload.rotational_speed,
+        "Torque [Nm]": payload.torque,
+        "Tool wear [min]": payload.tool_wear,
     }
 
     try:
-
-        # Run existing Random Forest + SHAP prediction.
         result = predict_machine(sensor_readings)
-
-        # Generate a notification when failure risk is detected.
-        notification = create_notification(
-            prediction_result=result,
-            sensor_readings=sensor_readings,
-            profile_id=request.profile_id,
-            product_id=request.product_id,
-        )
-
-        # Include the notification in the prediction response.
-        result["notification"] = notification
-
-        return result
-
     except ValueError as exc:
-
         raise HTTPException(
             status_code=422,
             detail=str(exc),
         ) from exc
-
-    except Exception as exc:
-
+    except Exception as exc:  # model/runtime failure
+        reference = uuid.uuid4().hex[:12]
+        logger.exception("Prediction failed (reference=%s)", reference)
         raise HTTPException(
             status_code=500,
-            detail=f"Prediction failed: {str(exc)}",
+            detail=(
+                "The prediction engine could not complete this request. "
+                f"Reference: {reference}"
+            ),
         ) from exc
+
+    result["risk_level"] = risk_level(result["failure_probability"])
+
+    record_id = parse_machine_id(payload.profile_id)
+    machine_id = machine_id_for(record_id) if record_id is not None else None
+
+    try:
+        stored_prediction = record_prediction(
+            result=result,
+            sensor_readings=sensor_readings,
+            machine_id=machine_id,
+            user_id=user["id"],
+        )
+    except Exception as exc:  # storage failure
+        reference = uuid.uuid4().hex[:12]
+        logger.exception(
+            "Prediction history could not be stored for user %s (reference=%s)",
+            user["email"],
+            reference,
+        )
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "The prediction could not be recorded. "
+                f"Reference: {reference}"
+            ),
+        ) from exc
+
+    result["prediction_id"] = stored_prediction["id"]
+    result["machine_id"] = machine_id
+
+    try:
+        notification = create_notification(
+            prediction_result=result,
+            sensor_readings=sensor_readings,
+            profile_id=payload.profile_id,
+            product_id=payload.product_id,
+        )
+    except Exception as exc:  # storage failure
+        reference = uuid.uuid4().hex[:12]
+        logger.exception(
+            "Notification could not be stored for user %s (reference=%s)",
+            user["email"],
+            reference,
+        )
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "The prediction succeeded but the maintenance alert could not "
+                f"be stored. Reference: {reference}"
+            ),
+        ) from exc
+
+    result["notification"] = notification
+
+    return result
 
 
 # ==================================================
 # NOTIFICATION LIST
 # ==================================================
 
-@app.get("/api/notifications")
+@api.get("/api/notifications")
 def get_notifications(
-    limit: int = Query(
-        default=100,
-        ge=1,
-        le=500
-    ),
-    offset: int = Query(
-        default=0,
-        ge=0
-    ),
-    status: str | None = Query(
-        default=None
-    ),
+    limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+    status: str | None = Query(default=None, max_length=20),
+    _user: dict = Depends(get_current_user),
 ):
-    """
-    Retrieve stored AI-generated maintenance notifications.
-    """
+    """Retrieve stored AI-generated maintenance notifications."""
 
-    return list_notifications(
-        limit=limit,
-        offset=offset,
-        status=status,
-    )
+    notifications = list_notifications(limit=limit, offset=offset, status=status)
+
+    return {
+        "total_count": count_notifications(status=status),
+        "count": len(notifications),
+        "limit": limit,
+        "offset": offset,
+        "notifications": notifications,
+    }
 
 
 # ==================================================
 # ASSIGN NOTIFICATION TO TECHNICIAN
 # ==================================================
 
-@app.patch("/api/notifications/{notification_id}/assign")
+@api.patch("/api/notifications/{notification_id}/assign")
 def assign_technician(
     notification_id: int,
     request: AssignNotificationRequest,
+    _user: dict = Depends(require_roles("Admin", "Maintenance")),
 ):
-    """
-    Assign a maintenance notification to a team member.
-    """
+    """Assign a maintenance notification to a team member."""
 
-    notification = assign_notification(
-        notification_id,
-        request.assigned_to.strip(),
-    )
+    notification = assign_notification(notification_id, request.assigned_to.strip())
 
     if notification is None:
-
         raise HTTPException(
             status_code=404,
             detail="Notification not found.",
@@ -530,23 +484,19 @@ def assign_technician(
 # ACKNOWLEDGE NOTIFICATION
 # ==================================================
 
-@app.post("/api/notifications/{notification_id}/acknowledge")
-def acknowledge_alert(notification_id: int):
-    """
-    Mark a new notification as acknowledged.
-    """
+@api.post("/api/notifications/{notification_id}/acknowledge")
+def acknowledge_alert(
+    notification_id: int,
+    _user: dict = Depends(get_current_user),
+):
+    """Mark a new notification as acknowledged."""
 
-    notification = acknowledge_notification(
-        notification_id
-    )
+    notification = acknowledge_notification(notification_id)
 
     if notification is None:
-
         raise HTTPException(
             status_code=404,
-            detail=(
-                "Notification not found or already processed."
-            ),
+            detail="Notification not found or already processed.",
         )
 
     return notification
@@ -556,23 +506,183 @@ def acknowledge_alert(notification_id: int):
 # RESOLVE NOTIFICATION
 # ==================================================
 
-@app.post("/api/notifications/{notification_id}/resolve")
-def resolve_alert(notification_id: int):
-    """
-    Mark an active notification as resolved.
-    """
+@api.post("/api/notifications/{notification_id}/resolve")
+def resolve_alert(
+    notification_id: int,
+    _user: dict = Depends(get_current_user),
+):
+    """Mark an active notification as resolved."""
 
-    notification = resolve_notification(
-        notification_id
-    )
+    notification = resolve_notification(notification_id)
 
     if notification is None:
-
         raise HTTPException(
             status_code=404,
-            detail=(
-                "Notification not found or already resolved."
-            ),
+            detail="Notification not found or already resolved.",
         )
 
     return notification
+
+
+# ==================================================
+# ADMIN OVERVIEW
+# ==================================================
+
+@api.get("/api/admin/overview")
+def admin_overview(_admin: dict = Depends(require_roles("Admin"))):
+    """
+    Real, database-backed statistics for the Admin dashboard.
+
+    Machine totals come from the historical dataset; risk bands come from
+    stored predictions. Nothing here is sampled or hardcoded.
+    """
+    totals = database_overview()
+
+    machines_total = total_machines()
+    failures = historical_failure_count()
+
+    return {
+        "machines": {
+            "total": machines_total,
+            "historical_failures": failures,
+            "no_failure_recorded": machines_total - failures,
+            "assigned": totals["assignments_total"],
+            "with_predictions": totals["predictions"]["machines_with_predictions"],
+        },
+        "users": totals["users"],
+        "notifications": totals["notifications"],
+        "predictions": totals["predictions"],
+        "work_orders": totals["work_orders"],
+        "issues": totals["issues"],
+        "recent_activity": totals["recent_activity"],
+        "risk_bands": list(RISK_BANDS),
+        "data_source": "AI4I 2020 cleaned dataset",
+        "record_type": "historical_dataset_records",
+        "note": (
+            "Machine totals and failure counts are historical dataset records. "
+            "Risk bands come from stored model predictions, not live sensors."
+        ),
+    }
+
+
+# ==================================================
+# MACHINE DETAIL
+# ==================================================
+
+@api.get("/api/machines/{machine_id}")
+def get_machine_detail(machine_id: str, user: dict = Depends(get_current_user)):
+    """
+    One machine with its latest prediction, assignments and open work.
+
+    Admins and Supervisors may open any machine; Engineers and Operators only
+    machines assigned to them.
+    """
+    dataset_or_error()
+
+    record = find_machine(machine_id)
+
+    if record is None:
+        raise HTTPException(status_code=404, detail="Machine not found.")
+
+    if not sees_all_machines(user):
+        scope = machine_scope(user) or set()
+
+        if record["machine_id"] not in scope:
+            raise HTTPException(
+                status_code=403,
+                detail="This machine is not assigned to you.",
+            )
+
+    predictions, prediction_total = list_predictions(
+        limit=5,
+        offset=0,
+        machine_id=record["machine_id"],
+    )
+
+    return {
+        "machine": record,
+        "latest_prediction": latest_for_machine(record["machine_id"]),
+        "recent_predictions": predictions,
+        "prediction_total": prediction_total,
+        "assignments": list_assignments(machine_id=record["machine_id"]),
+        "work_orders": work_order_stats(record["machine_id"]),
+        "record_type": "historical_dataset_record",
+    }
+
+
+# ==================================================
+# PREDICTION HISTORY
+# ==================================================
+
+@api.get("/api/predictions")
+def get_predictions(
+    machine_id: str | None = Query(default=None, max_length=32),
+    risk: str | None = Query(default=None, max_length=12),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    user: dict = Depends(get_current_user),
+):
+    """
+    Prediction history, newest first.
+
+    Admins and Supervisors see every prediction; Engineers and Operators see
+    only predictions for their assigned machines.
+    """
+    if risk is not None and risk.lower() not in RISK_LEVELS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"risk must be one of {', '.join(RISK_LEVELS)}",
+        )
+
+    predictions, total = list_predictions(
+        limit=limit,
+        offset=offset,
+        machine_id=machine_id,
+        level=risk,
+        machine_ids=machine_scope(user),
+    )
+
+    return {
+        "total_count": total,
+        "count": len(predictions),
+        "limit": limit,
+        "offset": offset,
+        "predictions": predictions,
+    }
+
+
+# ==================================================
+# APPLICATION FACTORY
+# ==================================================
+
+def create_app() -> FastAPI:
+    application = FastAPI(
+        title="SmartPredict API",
+        description=(
+            "Predictive maintenance API using the AI4I dataset, Random Forest, "
+            "SHAP explainability, JWT authentication and maintenance "
+            "notifications."
+        ),
+        version=APP_VERSION,
+        lifespan=lifespan,
+    )
+
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.ALLOWED_ORIGINS,
+        # Tokens travel in the Authorization header, not cookies, so
+        # credentialed CORS requests are unnecessary.
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    application.include_router(auth_router)
+    application.include_router(admin_users_router)
+    application.include_router(admin_router)
+    application.include_router(api)
+
+    return application
+
+
+app = create_app()

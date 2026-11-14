@@ -1,9 +1,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+import { ApiError, apiRequest } from "../api/client";
+import { useAuth } from "../auth/AuthContext";
 
 function NotificationPanel({ refreshKey = 0 }) {
+  const { logout } = useAuth();
+
   const [notifications, setNotifications] = useState([]);
   const [filter, setFilter] = useState("ALL");
   const [assignments, setAssignments] = useState({});
@@ -17,17 +20,9 @@ function NotificationPanel({ refreshKey = 0 }) {
     try {
       setError("");
 
-      const response = await fetch(
-        `${API_URL}/api/notifications?limit=100&offset=0`
+      const data = await apiRequest(
+        "/api/notifications?limit=100&offset=0"
       );
-
-      if (!response.ok) {
-        throw new Error(
-          `Unable to load notifications (${response.status})`
-        );
-      }
-
-      const data = await response.json();
 
       // Support both a raw array and an object containing notifications.
       const notificationList = Array.isArray(data)
@@ -38,22 +33,40 @@ function NotificationPanel({ refreshKey = 0 }) {
 
       setNotifications(notificationList);
     } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        await logout();
+        return;
+      }
+
       setError(err.message || "Could not load notifications.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [logout]);
 
   // Initial load, dashboard refresh and automatic 15-second refresh.
+  // Polling pauses while the tab is hidden and refreshes when it returns.
   useEffect(() => {
     fetchNotifications();
 
-    const intervalId = window.setInterval(
-      fetchNotifications,
-      15000
-    );
+    const intervalId = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        fetchNotifications();
+      }
+    }, 15000);
 
-    return () => window.clearInterval(intervalId);
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchNotifications();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [fetchNotifications, refreshKey]);
 
   // Notification summary counts.
@@ -99,29 +112,13 @@ function NotificationPanel({ refreshKey = 0 }) {
         [actionKey]: true,
       }));
 
-      const options = {
-        method: action === "assign" ? "PATCH" : "POST",
-        headers: {},
-      };
-
-      if (body) {
-        options.headers["Content-Type"] = "application/json";
-        options.body = JSON.stringify(body);
-      }
-
-      const response = await fetch(
-        `${API_URL}/api/notifications/${notificationId}/${action}`,
-        options
+      await apiRequest(
+        `/api/notifications/${notificationId}/${action}`,
+        {
+          method: action === "assign" ? "PATCH" : "POST",
+          body: body || undefined,
+        }
       );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.detail ||
-            `Unable to ${action} this notification.`
-        );
-      }
 
       setMessage(
         action === "assign"
@@ -133,6 +130,11 @@ function NotificationPanel({ refreshKey = 0 }) {
 
       await fetchNotifications();
     } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        await logout();
+        return;
+      }
+
       setError(
         err.message || "Notification action failed."
       );

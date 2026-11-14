@@ -36,3 +36,16 @@ ml_model/failure_model_backup.joblib
 
 # Local notification database
 notification_data.db
+
+# Secrets and local environment files (never commit these)
+.env
+.env.*
+!.env.example
+
+# Local database files
+*.db
+*.db-wal
+*.db-shm
+
+# Database backups created by backup_database()
+*.db.backup_*

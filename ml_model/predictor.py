@@ -1,17 +1,43 @@
+"""
+Reusable failure prediction with SHAP explanations.
 
+The response carries a ``model_version`` (a content hash of the saved artifact)
+and the ``decision_threshold`` used to turn a probability into a class, so a
+stored prediction can be traced back to the exact model that produced it.
+"""
+
+import hashlib
 from pathlib import Path
 
 import joblib
 import pandas as pd
 import shap
 
-# Load the model once when this module is imported
 MODEL_PATH = Path(__file__).resolve().parent / "failure_model.joblib"
+
+# Probability above which a reading is reported as a predicted failure.
+# The dataset is imbalanced (3.39% failures); this is a deliberate choice and
+# is returned with every prediction rather than hidden in the model.
+DECISION_THRESHOLD = 0.5
+
+
+def _artifact_digest(path: Path, chunk_size: int = 1 << 20) -> str:
+    """Short content hash identifying the loaded model artifact."""
+    digest = hashlib.sha256()
+
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(chunk_size), b""):
+            digest.update(block)
+
+    return digest.hexdigest()[:12]
+
 
 _saved = joblib.load(MODEL_PATH)
 _model = _saved["model"]
 _FEATURES = _saved["features"]
 _explainer = shap.TreeExplainer(_model)
+
+MODEL_VERSION = f"randomforest-{_artifact_digest(MODEL_PATH)}"
 
 
 def predict_machine(sensor_readings: dict) -> dict:
@@ -34,12 +60,12 @@ def predict_machine(sensor_readings: dict) -> dict:
 
     data = pd.DataFrame([values], columns=_FEATURES)
 
-    prediction = int(_model.predict(data)[0])
     probability = float(_model.predict_proba(data)[0, 1])
+    prediction = int(probability >= DECISION_THRESHOLD)
 
     raw_values = _explainer.shap_values(data)
 
-    # Extract the SHAP values for the failure class
+    # Extract the SHAP values for the failure class.
     if isinstance(raw_values, list):
         contributions = raw_values[1][0]
     elif getattr(raw_values, "ndim", 0) == 3:
@@ -50,15 +76,19 @@ def predict_machine(sensor_readings: dict) -> dict:
     explanations = []
     for name, value in zip(_FEATURES, contributions):
         contribution = float(value)
-        explanations.append({
-            "sensor": name,
-            "shap_value": round(contribution, 4),
-            "direction": (
-                "toward_failure" if contribution > 0
-                else "away_from_failure" if contribution < 0
-                else "neutral"
-            ),
-        })
+        explanations.append(
+            {
+                "sensor": name,
+                "shap_value": round(contribution, 4),
+                "direction": (
+                    "toward_failure"
+                    if contribution > 0
+                    else "away_from_failure"
+                    if contribution < 0
+                    else "neutral"
+                ),
+            }
+        )
 
     explanations.sort(
         key=lambda item: abs(item["shap_value"]),
@@ -68,11 +98,12 @@ def predict_machine(sensor_readings: dict) -> dict:
     return {
         "prediction": prediction,
         "status": (
-            "failure_predicted" if prediction == 1
-            else "no_failure_predicted"
+            "failure_predicted" if prediction == 1 else "no_failure_predicted"
         ),
         "failure_probability": round(probability, 4),
+        "decision_threshold": DECISION_THRESHOLD,
         "model": "RandomForestClassifier",
+        "model_version": MODEL_VERSION,
         "explanations": explanations,
         "note": (
             "SHAP explains model output, not real-world causation. "

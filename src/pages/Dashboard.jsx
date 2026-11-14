@@ -1,5 +1,13 @@
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -12,8 +20,11 @@ import {
   Filler,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
-import ThreeDScene from "../components/ThreeDScene";
+const ThreeDScene = lazy(() => import("../components/ThreeDScene"));
 import NotificationPanel from "../components/NotificationPanel";
+import SceneErrorBoundary from "../components/SceneErrorBoundary";
+import { ApiError, apiRequest } from "../api/client";
+import { useAuth } from "../auth/AuthContext";
 
 ChartJS.register(
   CategoryScale,
@@ -26,8 +37,7 @@ ChartJS.register(
   Filler
 );
 
-const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
-const PAGE_SIZE = 1000;
+const MACHINE_PAGE_SIZE = 50;
 
 const EMPTY_INPUTS = {
   air_temperature: "",
@@ -38,8 +48,15 @@ const EMPTY_INPUTS = {
 };
 
 function Dashboard() {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
   const [machines, setMachines] = useState([]);
   const [selectedMachineId, setSelectedMachineId] = useState("");
+  const [totalCount, setTotalCount] = useState(0);
+  const [offset, setOffset] = useState(0);
+  const [query, setQuery] = useState("");
+  const [appliedQuery, setAppliedQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -61,91 +78,82 @@ function Dashboard() {
   // LOAD OPERATING PROFILE DATA
   // ------------------------------------------
 
-  async function fetchMachineData(isRefresh = false) {
-    try {
-      setError("");
+  const fetchMachineData = useCallback(
+    async ({ pageOffset = 0, search = "", isRefresh = false } = {}) => {
+      try {
+        setError("");
 
-      if (isRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
-
-      const firstResponse = await fetch(
-        `${API_URL}/api/health?limit=${PAGE_SIZE}&offset=0`
-      );
-
-      if (!firstResponse.ok) {
-        throw new Error(`Backend error: ${firstResponse.status}`);
-      }
-
-      const firstPage = await firstResponse.json();
-
-      if (!Array.isArray(firstPage.machines)) {
-        throw new Error("Invalid operating profile response");
-      }
-
-      const total = firstPage.total_count;
-      const pageCount = Math.ceil(total / PAGE_SIZE);
-
-      const remainingPages = await Promise.all(
-        Array.from(
-          { length: Math.max(0, pageCount - 1) },
-          async (_, index) => {
-            const offset = (index + 1) * PAGE_SIZE;
-
-            const response = await fetch(
-              `${API_URL}/api/health?limit=${PAGE_SIZE}&offset=${offset}`
-            );
-
-            if (!response.ok) {
-              throw new Error(
-                "Unable to retrieve operating profile information"
-              );
-            }
-
-            const data = await response.json();
-
-            if (!Array.isArray(data.machines)) {
-              throw new Error("Invalid operating profile response");
-            }
-
-            return data.machines;
-          }
-        )
-      );
-
-      const allMachines = [
-        ...firstPage.machines,
-        ...remainingPages.flat(),
-      ];
-
-      setMachines(allMachines);
-
-      setSelectedMachineId((current) => {
-        if (
-          current &&
-          allMachines.some((item) => item.machine_id === current)
-        ) {
-          return current;
+        if (isRefresh) {
+          setRefreshing(true);
+        } else {
+          setLoading(true);
         }
 
-        return allMachines[0]?.machine_id ?? "";
-      });
+        const params = new URLSearchParams({
+          limit: String(MACHINE_PAGE_SIZE),
+          offset: String(pageOffset),
+        });
 
-      setLastUpdated(new Date().toLocaleTimeString());
-    } catch (err) {
-      console.error("Dashboard connection error:", err);
-      setError(err.message || "Unable to connect to backend");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }
+        if (search) {
+          params.set("q", search);
+        }
 
+        const data = await apiRequest(`/api/machines?${params.toString()}`);
+
+        if (!Array.isArray(data.machines)) {
+          throw new Error("Invalid operating profile response");
+        }
+
+        setMachines(data.machines);
+        setTotalCount(data.total_count ?? data.machines.length);
+
+        setSelectedMachineId((current) => {
+          if (
+            current &&
+            data.machines.some((item) => item.machine_id === current)
+          ) {
+            return current;
+          }
+
+          return data.machines[0]?.machine_id ?? "";
+        });
+
+        setLastUpdated(new Date().toLocaleTimeString());
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 401) {
+          await logout();
+          navigate("/login", { replace: true });
+          return;
+        }
+
+        console.error("Dashboard connection error:", err);
+        setError(err.message || "Unable to connect to backend");
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [logout, navigate]
+  );
+
+  // Debounce the search box so typing does not fire a request per keystroke.
   useEffect(() => {
-    fetchMachineData();
-  }, []);
+    const timer = window.setTimeout(() => {
+      setOffset(0);
+      setAppliedQuery(query.trim());
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, [query]);
+
+  // One page at a time: the browser never downloads the whole dataset.
+  useEffect(() => {
+    fetchMachineData({ pageOffset: offset, search: appliedQuery });
+  }, [fetchMachineData, offset, appliedQuery]);
+
+  const pageEnd = Math.min(offset + MACHINE_PAGE_SIZE, totalCount);
+  const canGoPrevious = offset > 0;
+  const canGoNext = offset + MACHINE_PAGE_SIZE < totalCount;
 
   // ------------------------------------------
   // SELECTED OPERATING PROFILE
@@ -318,33 +326,26 @@ function Dashboard() {
     setPredictionLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/predict`, {
+      const data = await apiRequest("/api/predict", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+        body: {
           ...numericInputs,
           profile_id: selectedMachine?.machine_id,
           product_id: selectedMachine?.product_id,
-        }),
+        },
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          typeof data.detail === "string"
-            ? data.detail
-            : "Prediction failed"
-        );
-      }
 
       setPrediction(data);
 
       // Reload notifications after prediction.
       setNotificationRefreshKey((previous) => previous + 1);
     } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        await logout();
+        navigate("/login", { replace: true });
+        return;
+      }
+
       console.error("Prediction error:", err);
       setPredictionError(
         err.message || "Unable to generate prediction"
@@ -358,7 +359,7 @@ function Dashboard() {
   // LOADING
   // ------------------------------------------
 
-  if (loading) {
+  if (loading && machines.length === 0) {
     return (
       <div className="dashboard-page">
         <div className="dashboard-section">
@@ -383,7 +384,11 @@ function Dashboard() {
             <h3>Backend Connection Error</h3>
             <p>{error}</p>
 
-            <button onClick={() => fetchMachineData()}>
+            <button
+              onClick={() =>
+                fetchMachineData({ pageOffset: offset, search: appliedQuery })
+              }
+            >
               Retry Connection
             </button>
           </div>
@@ -437,8 +442,30 @@ function Dashboard() {
         </div>
 
         <div className="machine-selector">
+          <label htmlFor="machine-search">
+            <strong>Find operating profile</strong>
+          </label>
+
+          <br />
+
+          <input
+            id="machine-search"
+            type="search"
+            placeholder="Search UDI, product ID or type"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            style={{
+              padding: "9px 10px",
+              borderRadius: "7px",
+              minWidth: "240px",
+            }}
+          />
+
+          <br />
+          <br />
+
           <label htmlFor="machine-select">
-            <strong>Select Operating Profile</strong>
+            <strong>Select operating profile</strong>
           </label>
 
           <br />
@@ -446,25 +473,58 @@ function Dashboard() {
           <select
             id="machine-select"
             value={selectedMachineId}
-            onChange={(event) =>
-              setSelectedMachineId(event.target.value)
-            }
+            onChange={(event) => setSelectedMachineId(event.target.value)}
+            disabled={machines.length === 0}
           >
             {machines.map((machine) => (
-              <option
-                key={machine.machine_id}
-                value={machine.machine_id}
-              >
-                {machine.machine_id}
+              <option key={machine.machine_id} value={machine.machine_id}>
+                {machine.machine_id} · {machine.product_id}
+                {machine.failure === 1 ? " · failure recorded" : ""}
               </option>
             ))}
           </select>
 
-          <br />
-          <br />
+          <div
+            style={{
+              display: "flex",
+              gap: "8px",
+              marginTop: "10px",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() =>
+                setOffset(Math.max(0, offset - MACHINE_PAGE_SIZE))
+              }
+              disabled={!canGoPrevious || refreshing}
+            >
+              Previous
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setOffset(offset + MACHINE_PAGE_SIZE)}
+              disabled={!canGoNext || refreshing}
+            >
+              Next
+            </button>
+          </div>
+
+          <p style={{ marginTop: "8px", opacity: 0.75, fontSize: "13px" }}>
+            Showing {totalCount === 0 ? 0 : offset + 1}-{pageEnd} of{" "}
+            {totalCount}
+            {appliedQuery ? ` matching "${appliedQuery}"` : ""}
+          </p>
 
           <button
-            onClick={() => fetchMachineData(true)}
+            type="button"
+            onClick={() =>
+              fetchMachineData({
+                pageOffset: offset,
+                search: appliedQuery,
+                isRefresh: true,
+              })
+            }
             disabled={refreshing}
           >
             {refreshing ? "Refreshing..." : "Refresh Monitoring"}
@@ -601,7 +661,11 @@ function Dashboard() {
             </p>
 
             <div className="machine-view">
-              <ThreeDScene machine={selectedMachine} />
+              <SceneErrorBoundary>
+                <Suspense fallback={<p>Loading 3D machine model...</p>}>
+                  <ThreeDScene machine={selectedMachine} />
+                </Suspense>
+              </SceneErrorBoundary>
             </div>
           </section>
 
@@ -611,8 +675,8 @@ function Dashboard() {
             <h2>Operating Speed Analysis</h2>
 
             <p>
-              Rotational speed across the first 20 historical
-              operating records.
+              Rotational speed across the first 20 records on this
+              page.
             </p>
 
             <div className="chart-container">

@@ -1,32 +1,43 @@
-
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+
+import { useAuth } from "../auth/AuthContext";
+import { roleHome } from "../auth/roles";
 import "./Login.css";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
 
-  const handleLogin = (e) => {
-    e.preventDefault();
+  const handleLogin = async (event) => {
+    event.preventDefault();
 
-    if (!email || !password) {
+    setMessage("");
+
+    if (!email.trim() || !password) {
       setMessage("Please enter your email and password.");
       return;
     }
 
-    // Save login status
-    localStorage.setItem("isLoggedIn", "true");
-    localStorage.setItem("userEmail", email);
+    setSubmitting(true);
 
-    setMessage("Login successful!");
+    try {
+      const signedIn = await login(email.trim(), password);
 
-    setTimeout(() => {
-      navigate("/profile");
-    }, 500);
+      // Each role lands on its own dashboard; /dashboard redirects otherwise.
+      const destination = location.state?.from || roleHome(signedIn.role);
+      navigate(destination, { replace: true });
+    } catch (err) {
+      setMessage(err.message || "Unable to sign in. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -51,9 +62,11 @@ function Login() {
             <input
               id="email"
               type="email"
+              autoComplete="username"
               placeholder="Enter your email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(event) => setEmail(event.target.value)}
+              required
             />
           </div>
 
@@ -63,20 +76,26 @@ function Login() {
             <input
               id="password"
               type="password"
+              autoComplete="current-password"
               placeholder="Enter your password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(event) => setPassword(event.target.value)}
+              required
             />
           </div>
 
-          <button type="submit" className="auth-button">
-            Login
+          <button
+            type="submit"
+            className="auth-button"
+            disabled={submitting}
+          >
+            {submitting ? "Signing in..." : "Login"}
           </button>
 
         </form>
 
         {message && (
-          <p className="auth-message">
+          <p className="auth-message" role="alert">
             {message}
           </p>
         )}
@@ -94,4 +113,3 @@ function Login() {
 }
 
 export default Login;
-

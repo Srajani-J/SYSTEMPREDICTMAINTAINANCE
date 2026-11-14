@@ -1,6 +1,7 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+
+import { useAuth } from "../auth/AuthContext";
 import "./Login.css";
 
 function Register() {
@@ -9,123 +10,137 @@ function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const navigate = useNavigate();
+  const { register } = useAuth();
 
-  const handleRegister = (e) => {
-    e.preventDefault();
+  const handleRegister = async (event) => {
+    event.preventDefault();
 
-    // Check empty fields
-    if (!name || !email || !password || !confirmPassword) {
+    setMessage("");
+
+    if (!name.trim() || !email.trim() || !password || !confirmPassword) {
       setMessage("Please fill in all fields.");
       return;
     }
 
-    // Check password match
     if (password !== confirmPassword) {
       setMessage("Passwords do not match.");
       return;
     }
 
-    // Save user information
-    localStorage.setItem("isLoggedIn", "true");
-    localStorage.setItem("userName", name);
-    localStorage.setItem("userEmail", email);
+    setSubmitting(true);
 
-    setMessage("Account created successfully!");
-
-    // Go to profile
-    setTimeout(() => {
-      navigate("/profile");
-    }, 500);
+    try {
+      await register(name.trim(), email.trim(), password);
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      setMessage(
+        err.message || "Unable to create the account. Please try again."
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <div className="auth-page">
       <div className="auth-card">
 
-        {/* Logo */}
         <div className="auth-logo">
           SYSTEM<span>SMART</span>PREDICT
         </div>
 
-        {/* Heading */}
         <h1>Create Account</h1>
 
         <p className="auth-subtitle">
           Create your account to access the industrial intelligence platform
         </p>
 
-        {/* Register Form */}
         <form onSubmit={handleRegister}>
 
-          {/* Full Name */}
           <div className="input-group">
             <label htmlFor="name">Full Name</label>
 
             <input
               id="name"
               type="text"
+              autoComplete="name"
               placeholder="Enter your full name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(event) => setName(event.target.value)}
+              required
             />
           </div>
 
-          {/* Email */}
           <div className="input-group">
             <label htmlFor="register-email">Email</label>
 
             <input
               id="register-email"
               type="email"
+              autoComplete="email"
               placeholder="Enter your email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(event) => setEmail(event.target.value)}
+              required
             />
           </div>
 
-          {/* Password */}
           <div className="input-group">
             <label htmlFor="register-password">Password</label>
 
             <input
               id="register-password"
               type="password"
+              autoComplete="new-password"
               placeholder="Create a password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(event) => setPassword(event.target.value)}
+              minLength={8}
+              maxLength={72}
+              required
             />
+
+            <small className="auth-hint">
+              At least 8 characters with an uppercase letter, a lowercase
+              letter, a digit and a symbol.
+            </small>
           </div>
 
-          {/* Confirm Password */}
           <div className="input-group">
             <label htmlFor="confirm-password">Confirm Password</label>
 
             <input
               id="confirm-password"
               type="password"
+              autoComplete="new-password"
               placeholder="Confirm your password"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              minLength={8}
+              maxLength={72}
+              required
             />
           </div>
 
-          {/* Create Account Button */}
-          <button type="submit" className="auth-button">
-            Create Account
+          <button
+            type="submit"
+            className="auth-button"
+            disabled={submitting}
+          >
+            {submitting ? "Creating account..." : "Create Account"}
           </button>
 
         </form>
 
-        {/* Message */}
         {message && (
-          <p className="auth-message">
+          <p className="auth-message" role="alert">
             {message}
           </p>
         )}
 
-        {/* Login Link */}
         <p className="auth-footer">
           Already have an account?{" "}
           <Link to="/login" className="auth-link">
@@ -139,4 +154,3 @@ function Register() {
 }
 
 export default Register;
-
